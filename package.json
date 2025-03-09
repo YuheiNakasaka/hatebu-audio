@@ -1,0 +1,51 @@
+{
+  "name": "hatebu-audio",
+  "version": "0.1.0",
+  "description": "はてなブックマークの記事を要約して音声化するシステム",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "build": "tsc",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "test": "jest",
+    "db:init": "ts-node src/scripts/initDb.ts"
+  },
+  "keywords": [
+    "hatena",
+    "bookmark",
+    "audio",
+    "tts",
+    "summary"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@google-cloud/text-to-speech": "^4.2.1",
+    "axios": "^1.4.0",
+    "chalk": "^4.1.2",
+    "cheerio": "^1.0.0-rc.12",
+    "commander": "^10.0.1",
+    "dotenv": "^16.3.1",
+    "inquirer": "^8.2.5",
+    "openai": "^3.3.0",
+    "ora": "^5.4.1",
+    "pdf-parse": "^1.1.1",
+    "rss-parser": "^3.13.0",
+    "sqlite3": "^5.1.6",
+    "turndown": "^7.1.2"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.4.1",
+    "@types/inquirer": "^8.2.6",
+    "@types/jest": "^29.5.2",
+    "@types/node": "^18.16.18",
+    "@types/sqlite3": "^3.1.8",
+    "@types/turndown": "^5.0.1",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.1.3"
+  }
+}
