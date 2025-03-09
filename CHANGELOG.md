@@ -6,6 +6,21 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- コマンドラインインターフェース(CLI)の実装
+  - 対話型モードの実装
+  - 各種コマンドの実装（fetch-bookmarks, extract-contents, generate-summaries, generate-narrations, generate-audio-files, process-all）
+  - コマンドラインオプションの実装（--username, --limit）
+  - 処理状況の表示機能
+  - エラーハンドリング機能
+
+- READMEの作成
+  - セットアップ手順
+  - 使用方法
+  - 動作確認手順
+  - トラブルシューティング
+
+### Added
+
 - ナレーション生成サービス(NarrationService)の実装
   - OpenAI APIを使用して要約からナレーションテキストを生成する機能
   - 生成したナレーションテキストをデータベースに保存する機能
