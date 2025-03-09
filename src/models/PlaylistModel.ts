@@ -24,12 +24,13 @@ export class PlaylistModel {
 
     const sql = `
       INSERT INTO playlists (
-        name
-      ) VALUES (?)
+        name, description
+      ) VALUES (?, ?)
     `;
 
     const params = [
       playlist.name,
+      playlist.description || "",
     ];
 
     await this.db.run(sql, params);
@@ -68,24 +69,21 @@ export class PlaylistModel {
   /**
    * 名前によるプレイリストの取得
    * @param name プレイリスト名
-   * @returns プレイリスト情報
+   * @returns プレイリスト情報の配列
    */
-  async findByName(name: string): Promise<Playlist | null> {
+  async findByName(name: string): Promise<Playlist[]> {
     await this.db.connect();
 
     const sql = "SELECT * FROM playlists WHERE name = ?";
-    const playlist = await this.db.get<Playlist>(sql, [name]);
-
-    if (!playlist) {
-      return null;
-    }
+    const playlists = await this.db.all<Playlist>(sql, [name]);
 
     // 日付文字列をDateオブジェクトに変換
-    if (playlist.created_at && typeof playlist.created_at === "string") {
-      playlist.created_at = new Date(playlist.created_at);
-    }
-
-    return playlist;
+    return playlists.map((playlist) => {
+      if (playlist.created_at && typeof playlist.created_at === "string") {
+        playlist.created_at = new Date(playlist.created_at);
+      }
+      return playlist;
+    });
   }
 
   /**
@@ -123,6 +121,11 @@ export class PlaylistModel {
     if (playlist.name !== undefined) {
       updateFields.push("name = ?");
       params.push(playlist.name);
+    }
+
+    if (playlist.description !== undefined) {
+      updateFields.push("description = ?");
+      params.push(playlist.description);
     }
 
     // 更新するフィールドがない場合は何もしない
@@ -164,7 +167,7 @@ export class PlaylistModel {
    * @param playlistItem プレイリスト項目情報
    * @returns 作成されたプレイリスト項目のID
    */
-  async addItem(playlistItem: PlaylistItem): Promise<number> {
+  async addPlaylistItem(playlistItem: PlaylistItem): Promise<number> {
     await this.db.connect();
 
     // 現在の最大位置を取得
@@ -236,7 +239,7 @@ export class PlaylistModel {
    * @param newPosition 新しい位置
    * @returns 更新が成功したかどうか
    */
-  async moveItem(id: number, newPosition: number): Promise<boolean> {
+  async updatePlaylistItemPosition(id: number, newPosition: number): Promise<boolean> {
     await this.db.connect();
 
     // プレイリスト項目の情報を取得
@@ -300,7 +303,7 @@ export class PlaylistModel {
    * @param playlistId プレイリストID
    * @returns プレイリスト項目情報の配列
    */
-  async getItems(playlistId: number): Promise<PlaylistItem[]> {
+  async findPlaylistItems(playlistId: number): Promise<PlaylistItem[]> {
     await this.db.connect();
 
     const sql = "SELECT * FROM playlist_items WHERE playlist_id = ? ORDER BY position";
@@ -319,5 +322,50 @@ export class PlaylistModel {
     const results = await this.db.all<{ audio_file_id: number }>(sql, [playlistId]);
     
     return results.map((result) => result.audio_file_id);
+  }
+
+  /**
+   * プレイリスト項目を取得
+   * @param playlistId プレイリストID
+   * @param audioFileId 音声ファイルID
+   * @returns プレイリスト項目情報
+   */
+  async findPlaylistItem(playlistId: number, audioFileId: number): Promise<PlaylistItem | null> {
+    await this.db.connect();
+
+    const sql = "SELECT * FROM playlist_items WHERE playlist_id = ? AND audio_file_id = ?";
+    const playlistItem = await this.db.get<PlaylistItem>(sql, [playlistId, audioFileId]);
+
+    return playlistItem || null;
+  }
+
+  /**
+   * プレイリストから音声ファイルを削除
+   * @param playlistId プレイリストID
+   * @param audioFileId 音声ファイルID
+   * @returns 削除が成功したかどうか
+   */
+  async removePlaylistItem(playlistId: number, audioFileId: number): Promise<boolean> {
+    await this.db.connect();
+
+    // プレイリスト項目の情報を取得
+    const item = await this.findPlaylistItem(playlistId, audioFileId);
+    if (!item || !item.id) {
+      return false;
+    }
+
+    // トランザクションを開始
+    return this.db.transaction(async () => {
+      // プレイリスト項目を削除
+      await this.db.run("DELETE FROM playlist_items WHERE id = ?", [item.id]);
+      
+      // 後続の項目の位置を更新
+      await this.db.run(
+        "UPDATE playlist_items SET position = position - 1 WHERE playlist_id = ? AND position > ?",
+        [playlistId, item.position]
+      );
+      
+      return true;
+    });
   }
 }

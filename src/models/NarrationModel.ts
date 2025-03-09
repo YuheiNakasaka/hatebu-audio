@@ -156,4 +156,25 @@ export class NarrationModel {
 
     return true;
   }
+
+  /**
+   * 全ナレーションの取得
+   * @param limit 取得件数（デフォルト: 100）
+   * @param offset 開始位置（デフォルト: 0）
+   * @returns ナレーション情報の配列
+   */
+  async findAll(limit = 100, offset = 0): Promise<Narration[]> {
+    await this.db.connect();
+
+    const sql = "SELECT * FROM narrations ORDER BY generated_at DESC LIMIT ? OFFSET ?";
+    const narrations = await this.db.all<Narration>(sql, [limit, offset]);
+
+    // 日付文字列をDateオブジェクトに変換
+    return narrations.map((narration) => {
+      if (narration.generated_at && typeof narration.generated_at === "string") {
+        narration.generated_at = new Date(narration.generated_at);
+      }
+      return narration;
+    });
+  }
 }

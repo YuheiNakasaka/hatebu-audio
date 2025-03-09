@@ -156,4 +156,25 @@ export class SummaryModel {
 
     return true;
   }
+
+  /**
+   * 全要約の取得
+   * @param limit 取得件数（デフォルト: 100）
+   * @param offset 開始位置（デフォルト: 0）
+   * @returns 要約情報の配列
+   */
+  async findAll(limit = 100, offset = 0): Promise<Summary[]> {
+    await this.db.connect();
+
+    const sql = "SELECT * FROM summaries ORDER BY generated_at DESC LIMIT ? OFFSET ?";
+    const summaries = await this.db.all<Summary>(sql, [limit, offset]);
+
+    // 日付文字列をDateオブジェクトに変換
+    return summaries.map((summary) => {
+      if (summary.generated_at && typeof summary.generated_at === "string") {
+        summary.generated_at = new Date(summary.generated_at);
+      }
+      return summary;
+    });
+  }
 }

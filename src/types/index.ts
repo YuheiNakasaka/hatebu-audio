@@ -60,6 +60,7 @@ export interface AudioFile {
 export interface Playlist {
   id?: number;
   name: string;
+  description?: string;
   created_at?: Date;
 }
 
@@ -71,6 +72,8 @@ export interface PlaylistItem {
   playlist_id: number;
   audio_file_id: number;
   position: number;
+  audio_file?: AudioFile;
+  bookmark?: Bookmark;
 }
 
 /**
