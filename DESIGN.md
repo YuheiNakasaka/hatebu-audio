@@ -95,15 +95,6 @@ CREATE TABLE contents (
     FOREIGN KEY (bookmark_id) REFERENCES bookmarks(id)
 );
 
--- 要約テーブル
-CREATE TABLE summaries (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    bookmark_id INTEGER NOT NULL,
-    summary_text TEXT NOT NULL,
-    generated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (bookmark_id) REFERENCES bookmarks(id)
-);
-
 -- ナレーションテーブル
 CREATE TABLE narrations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -212,7 +203,6 @@ hatebu-audio/
 │   ├── services/                # サービスレイヤー
 │   │   ├── bookmark/            # ブックマーク取得
 │   │   ├── content/             # コンテンツ抽出
-│   │   ├── summary/             # 要約生成
 │   │   ├── narration/           # ナレーション生成
 │   │   ├── tts/                 # 音声合成
 │   │   └── database/            # データベース操作
@@ -239,10 +229,9 @@ hatebu-audio/
 2. データベーススキーマ作成とモデル実装
 3. はてなブックマークRSS取得機能実装
 4. Webページ・PDF抽出機能実装
-5. 要約生成機能実装（OpenAI/Claude API）
-6. ナレーション生成機能実装
-7. 音声合成機能実装（Google Cloud TTS）
-8. 基本的なCLIインターフェース実装
+5. ナレーション生成機能実装
+6. 音声合成機能実装（Google Cloud TTS）
+7. 基本的なCLIインターフェース実装
 
 ### 7.2 フェーズ2: 機能拡張
 
@@ -262,17 +251,7 @@ hatebu-audio/
 
 ## 8. API設計
 
-### 8.1 要約生成API（OpenAI/Claude）
-
-要約生成には以下のようなプロンプトを使用します：
-
-```
-以下の記事を600〜800字程度で要約してください。要点を押さえ、重要な情報を漏らさないようにしてください。
-
-[記事内容]
-```
-
-### 8.2 ナレーション生成API（OpenAI/Claude）
+### 8.1 ナレーション生成API（OpenAI/Claude）
 
 ナレーション生成には以下のようなプロンプトを使用します：
 

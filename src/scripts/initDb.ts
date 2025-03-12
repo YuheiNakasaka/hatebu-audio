@@ -54,17 +54,6 @@ const db = new sqlite3.Database(dbPath, (err) => {
       );
     `);
 
-    // 要約テーブル
-    db.run(`
-      CREATE TABLE IF NOT EXISTS summaries (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        bookmark_id INTEGER NOT NULL,
-        summary_text TEXT NOT NULL,
-        generated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (bookmark_id) REFERENCES bookmarks(id)
-      );
-    `);
-
     // ナレーションテーブル
     db.run(`
       CREATE TABLE IF NOT EXISTS narrations (

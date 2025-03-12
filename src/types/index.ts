@@ -24,16 +24,6 @@ export interface Content {
 }
 
 /**
- * 要約の型定義
- */
-export interface Summary {
-  id?: number;
-  bookmark_id: number;
-  summary_text: string;
-  generated_at?: Date;
-}
-
-/**
  * ナレーションの型定義
  */
 export interface Narration {

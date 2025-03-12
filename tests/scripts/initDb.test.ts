@@ -46,7 +46,6 @@ describe("initDb script", () => {
     const tables = [
       "bookmarks",
       "contents",
-      "summaries",
       "narrations",
       "audio_files",
       "playlists",

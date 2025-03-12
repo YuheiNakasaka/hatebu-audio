@@ -1,4 +1,4 @@
-import { Narration, Summary, ProcessResult, ProcessStatus } from "../../types";
+import { Narration, ProcessResult, ProcessStatus } from "../../types";
 import { NarrationModel, ContentModel, BookmarkModel } from "../../models";
 import { Configuration, OpenAIApi } from "openai";
 import dotenv from "dotenv";

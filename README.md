@@ -91,9 +91,6 @@ npm run dev -- fetch-bookmarks
 # 未処理のブックマークからコンテンツを抽出して保存
 npm run dev -- extract-contents
 
-# 未処理のコンテンツから要約を生成して保存
-npm run dev -- generate-summaries
-
 # 未処理の要約からナレーションを生成して保存
 npm run dev -- generate-narrations
 

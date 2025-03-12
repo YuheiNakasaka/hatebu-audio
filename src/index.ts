@@ -5,7 +5,6 @@ import chalk from "chalk";
 import ora from "ora";
 import { HatenaBookmarkService } from "./services/bookmark";
 import { WebContentService } from "./services/content";
-import { OpenAISummaryService } from "./services/summary";
 import { OpenAINarrationService } from "./services/narration";
 import { GoogleCloudTTSService } from "./services/tts";
 import { ProcessStatus } from "./types";
@@ -16,7 +15,6 @@ dotenv.config();
 // サービスのインスタンス化
 const bookmarkService = new HatenaBookmarkService();
 const contentService = new WebContentService();
-const summaryService = new OpenAISummaryService();
 const narrationService = new OpenAINarrationService();
 const ttsService = new GoogleCloudTTSService();
 
@@ -80,37 +78,6 @@ program
         console.log(chalk.green(`✓ ${result.message}`));
         if (result.data) {
           console.log(chalk.gray(`  抽出されたコンテンツ: ${result.data.length}件`));
-        }
-      } else if (result.status === ProcessStatus.SKIPPED) {
-        console.log(chalk.yellow(`⚠ ${result.message}`));
-      } else {
-        console.log(chalk.red(`✗ ${result.message}`));
-      }
-    } catch (error) {
-      spinner.stop();
-      console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
-    }
-  });
-
-// 要約生成コマンド
-program
-  .command("generate-summaries")
-  .description("未処理のコンテンツから要約を生成して保存")
-  .option("-l, --limit <number>", "処理する最大件数", "10")
-  .action(async (options) => {
-    const spinner = ora("要約を生成中...").start();
-    
-    try {
-      const result = await summaryService.processUnprocessedContents(
-        parseInt(options.limit)
-      );
-      
-      spinner.stop();
-      
-      if (result.status === ProcessStatus.SUCCESS) {
-        console.log(chalk.green(`✓ ${result.message}`));
-        if (result.data) {
-          console.log(chalk.gray(`  生成された要約: ${result.data.length}件`));
         }
       } else if (result.status === ProcessStatus.SKIPPED) {
         console.log(chalk.yellow(`⚠ ${result.message}`));
@@ -255,34 +222,6 @@ program
       return;
     }
     
-    // 要約生成
-    console.log(chalk.blue("\n3. 要約の生成"));
-    const spinner3 = ora("要約を生成中...").start();
-    
-    try {
-      const result3 = await summaryService.processUnprocessedContents(
-        parseInt(options.limit)
-      );
-      
-      spinner3.stop();
-      
-      if (result3.status === ProcessStatus.SUCCESS) {
-        console.log(chalk.green(`✓ ${result3.message}`));
-        if (result3.data) {
-          console.log(chalk.gray(`  生成された要約: ${result3.data.length}件`));
-        }
-      } else if (result3.status === ProcessStatus.SKIPPED) {
-        console.log(chalk.yellow(`⚠ ${result3.message}`));
-      } else {
-        console.log(chalk.red(`✗ ${result3.message}`));
-        return;
-      }
-    } catch (error) {
-      spinner3.stop();
-      console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
-      return;
-    }
-    
     // ナレーション生成
     console.log(chalk.blue("\n4. ナレーションの生成"));
     const spinner4 = ora("ナレーションを生成中...").start();
@@ -369,7 +308,6 @@ program
         choices: [
           { name: "ブックマーク情報の取得", value: "fetch-bookmarks" },
           { name: "コンテンツの抽出", value: "extract-contents" },
-          { name: "要約の生成", value: "generate-summaries" },
           { name: "ナレーションの生成", value: "generate-narrations" },
           { name: "音声ファイルの生成", value: "generate-audio-files" },
           { name: "全処理の実行", value: "process-all" },
