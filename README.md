@@ -104,7 +104,10 @@ npm run dev -- merge-playlist --playlist-id=1 --name="結合ファイル名"
 # 指定した音声ファイルを一つのMP3ファイルに結合
 npm run dev -- merge-audio-files --ids=1,2,3 --name="結合ファイル名"
 
-# ブックマーク取得から音声ファイル生成までの全処理を実行
+# 未処理の音声ファイル（まだマージされていない音声ファイル）を自動でマージ
+npm run dev -- merge-unprocessed --name="結合ファイル名"
+
+# ブックマーク取得から音声ファイル生成・結合までの全処理を実行
 npm run dev -- process-all
 
 # ヘルプを表示

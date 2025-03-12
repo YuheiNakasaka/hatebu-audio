@@ -229,6 +229,36 @@ program
     }
   });
 
+// 未処理の音声ファイルを結合するコマンド
+program
+  .command("merge-unprocessed")
+  .description("未処理の音声ファイルを一つのMP3ファイルに結合")
+  .option("-n, --name <name>", "結合後のファイル名（指定しない場合は自動生成）")
+  .action(async (options) => {
+    const spinner = ora("未処理の音声ファイルを結合中...").start();
+    
+    try {
+      const result = await audioMergeService.mergeUnprocessedAudioFiles(options.name);
+      
+      spinner.stop();
+      
+      if (result.status === ProcessStatus.SUCCESS) {
+        console.log(chalk.green(`✓ ${result.message}`));
+        if (result.data) {
+          console.log(chalk.gray(`  結合された音声ファイル: ${result.data.name}`));
+          console.log(chalk.gray(`  ファイルパス: ${result.data.file_path}`));
+        }
+      } else if (result.status === ProcessStatus.SKIPPED) {
+        console.log(chalk.yellow(`⚠ ${result.message}`));
+      } else {
+        console.log(chalk.red(`✗ ${result.message}`));
+      }
+    } catch (error) {
+      spinner.stop();
+      console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
+    }
+  });
+
 // 全処理実行コマンド
 program
   .command("process-all")
@@ -355,6 +385,33 @@ program
       return;
     }
     
+    // 音声ファイル結合
+    console.log(chalk.blue("\n6. 未処理の音声ファイルの結合"));
+    const spinner6 = ora("未処理の音声ファイルを結合中...").start();
+    
+    try {
+      const result6 = await audioMergeService.mergeUnprocessedAudioFiles(
+        `自動生成_${new Date().toISOString().slice(0, 10)}`
+      );
+      
+      spinner6.stop();
+      
+      if (result6.status === ProcessStatus.SUCCESS) {
+        console.log(chalk.green(`✓ ${result6.message}`));
+        if (result6.data) {
+          console.log(chalk.gray(`  結合された音声ファイル: ${result6.data.name}`));
+          console.log(chalk.gray(`  ファイルパス: ${result6.data.file_path}`));
+        }
+      } else if (result6.status === ProcessStatus.SKIPPED) {
+        console.log(chalk.yellow(`⚠ ${result6.message}`));
+      } else {
+        console.log(chalk.red(`✗ ${result6.message}`));
+      }
+    } catch (error) {
+      spinner6.stop();
+      console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
+    }
+    
     console.log(chalk.blue("\n=== はてなブックマーク音声化処理完了 ==="));
   });
 
@@ -385,6 +442,7 @@ program
           { name: "音声ファイルの生成", value: "generate-audio-files" },
           { name: "プレイリストの音声ファイルを結合", value: "merge-playlist" },
           { name: "指定した音声ファイルを結合", value: "merge-audio-files" },
+          { name: "未処理の音声ファイルを結合", value: "merge-unprocessed" },
           { name: "全処理の実行", value: "process-all" },
           { name: "終了", value: "exit" },
         ],
@@ -496,6 +554,24 @@ program
           `--ids=${ids}`,
           `--name=${name}`,
         ]);
+      }
+    } else if (action === "merge-unprocessed") {
+      const { name } = await inquirer.prompt([
+        {
+          type: "input",
+          name: "name",
+          message: "結合後のファイル名を入力してください (空欄の場合は自動生成):",
+        },
+      ]);
+      
+      const cmd = program.commands.find((cmd) => cmd.name() === "merge-unprocessed");
+      if (cmd) {
+        await cmd.parseAsync([
+          process.argv[0],
+          process.argv[1],
+          "merge-unprocessed",
+          name ? `--name=${name}` : "",
+        ].filter(Boolean));
       }
     } else {
       const { limit } = await inquirer.prompt([

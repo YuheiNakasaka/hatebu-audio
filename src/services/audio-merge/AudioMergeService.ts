@@ -40,6 +40,13 @@ export interface AudioMergeService {
    * @returns 処理結果
    */
   mergePlaylist(playlistId: number, name?: string): Promise<ProcessResult<MergedAudioFile>>;
+
+  /**
+   * 未処理の音声ファイル（まだマージされていない音声ファイル）を自動でマージする
+   * @param name 結合音声ファイル名（指定しない場合は自動生成）
+   * @returns 処理結果
+   */
+  mergeUnprocessedAudioFiles(name?: string): Promise<ProcessResult<MergedAudioFile>>;
 }
 
 /**
@@ -216,6 +223,57 @@ export class DefaultAudioMergeService implements AudioMergeService {
         return {
           status: ProcessStatus.ERROR,
           message: `プレイリストの音声ファイル結合に失敗しました: ${error.message}`,
+          error: error,
+        };
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 未処理の音声ファイル（まだマージされていない音声ファイル）を自動でマージする
+   * @param name 結合音声ファイル名（指定しない場合は自動生成）
+   * @returns 処理結果
+   */
+  async mergeUnprocessedAudioFiles(name?: string): Promise<ProcessResult<MergedAudioFile>> {
+    try {
+      // 既存の結合音声ファイル情報を取得
+      const mergedAudioFiles = await this.mergedAudioFileModel.findAll(1000, 0);
+      
+      // 既に結合済みの音声ファイルIDのセットを作成
+      const mergedAudioFileIds = new Set<number>();
+      mergedAudioFiles.forEach(mergedFile => {
+        if (Array.isArray(mergedFile.source_files)) {
+          mergedFile.source_files.forEach(id => mergedAudioFileIds.add(id));
+        }
+      });
+      
+      // 全ての音声ファイルを取得
+      const allAudioFiles = await this.audioFileModel.findAll(1000, 0);
+      
+      // 未処理の音声ファイルIDを抽出
+      const unprocessedAudioFileIds = allAudioFiles
+        .filter(file => file.id !== undefined && !mergedAudioFileIds.has(file.id))
+        .map(file => file.id as number);
+      
+      if (unprocessedAudioFileIds.length === 0) {
+        return {
+          status: ProcessStatus.SKIPPED,
+          message: "未処理の音声ファイルが見つかりませんでした。",
+        };
+      }
+      
+      // 結合音声ファイル名の設定
+      const timestamp = new Date().toISOString().slice(0, 10);
+      const mergedName = name || `自動生成_${timestamp}`;
+      
+      // 音声ファイルの結合
+      return this.mergeAndSaveAudioFiles(unprocessedAudioFileIds, mergedName);
+    } catch (error) {
+      if (error instanceof Error) {
+        return {
+          status: ProcessStatus.ERROR,
+          message: `未処理の音声ファイルの結合に失敗しました: ${error.message}`,
           error: error,
         };
       }
