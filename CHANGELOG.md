@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- 音声ファイル結合時に無音を挿入する機能の追加
+  - 音声ファイル間に2.5秒の無音を自動的に挿入
+  - FFmpegのcomplexFilterを使用して効率的に実装
+  - 無音の長さをパラメータで設定可能（デフォルト: 2.5秒）
+
+### Added
+
 - 未処理の音声ファイル自動マージ機能の実装
   - 未処理の音声ファイル（まだマージされていない音声ファイル）を自動でマージする機能
   - process-allコマンドの最後にファイル結合処理を追加

@@ -18,12 +18,13 @@ const mkdirAsync = promisify(fs.mkdir);
  */
 export interface AudioMergeService {
   /**
-   * 音声ファイルを結合
+   * 音声ファイルを結合（ファイル間に無音を挿入）
    * @param inputFiles 入力ファイルパスの配列
    * @param outputFile 出力ファイルパス
+   * @param silenceDuration ファイル間の無音の長さ（秒）
    * @returns 結合した音声ファイルのパス
    */
-  mergeAudioFiles(inputFiles: string[], outputFile: string): Promise<string>;
+  mergeAudioFiles(inputFiles: string[], outputFile: string, silenceDuration?: number): Promise<string>;
 
   /**
    * 指定した音声ファイルIDの配列から結合音声ファイルを生成して保存
@@ -74,12 +75,17 @@ export class DefaultAudioMergeService implements AudioMergeService {
   }
 
   /**
-   * 音声ファイルを結合
+   * 音声ファイルを結合（ファイル間に無音を挿入）
    * @param inputFiles 入力ファイルパスの配列
    * @param outputFile 出力ファイルパス
+   * @param silenceDuration ファイル間の無音の長さ（秒）
    * @returns 結合した音声ファイルのパス
    */
-  async mergeAudioFiles(inputFiles: string[], outputFile: string): Promise<string> {
+  async mergeAudioFiles(
+    inputFiles: string[], 
+    outputFile: string, 
+    silenceDuration: number = 2.5
+  ): Promise<string> {
     try {
       // 入力ファイルの存在確認
       for (const file of inputFiles) {
@@ -103,6 +109,23 @@ export class DefaultAudioMergeService implements AudioMergeService {
           command.input(file);
         });
         
+        // ファイル間に無音を挿入するフィルターを構築
+        if (inputFiles.length > 1) {
+          const filterComplex = inputFiles.map((_, index) => {
+            // 最後のファイル以外に対して処理
+            if (index < inputFiles.length - 1) {
+              return `[${index}]apad=pad_dur=${silenceDuration}[s${index}];`;
+            }
+            return `[${index}]apad=pad_dur=0[s${index}];`;
+          }).join('');
+          
+          // 全てのストリームを連結
+          const concatParts = inputFiles.map((_, index) => `[s${index}]`).join('');
+          const filterComplexFull = `${filterComplex}${concatParts}concat=n=${inputFiles.length}:v=0:a=1[out]`;
+          
+          command.complexFilter(filterComplexFull, 'out');
+        }
+        
         // 結合処理を実行
         command
           .on('error', (err) => {
@@ -111,7 +134,7 @@ export class DefaultAudioMergeService implements AudioMergeService {
           .on('end', () => {
             resolve(outputFile);
           })
-          .mergeToFile(outputFile, path.dirname(outputFile));
+          .save(outputFile);
       });
     } catch (error) {
       if (error instanceof Error) {
