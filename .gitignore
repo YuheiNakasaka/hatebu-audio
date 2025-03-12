@@ -144,3 +144,5 @@ data/audio/
 data/db/
 
 data/
+
+.DS_Store

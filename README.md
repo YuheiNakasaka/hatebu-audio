@@ -11,6 +11,7 @@
 - OpenAI APIを使用したナレーション生成
 - Google Cloud TTSを使用した音声合成
 - プレイリスト管理
+- 複数の音声ファイルを一つのMP3ファイルに結合
 
 ## 必要条件
 
@@ -96,6 +97,12 @@ npm run dev -- generate-narrations
 
 # 未処理のナレーションから音声ファイルを生成して保存
 npm run dev -- generate-audio-files
+
+# プレイリストの音声ファイルを一つのMP3ファイルに結合
+npm run dev -- merge-playlist --playlist-id=1 --name="結合ファイル名"
+
+# 指定した音声ファイルを一つのMP3ファイルに結合
+npm run dev -- merge-audio-files --ids=1,2,3 --name="結合ファイル名"
 
 # ブックマーク取得から音声ファイル生成までの全処理を実行
 npm run dev -- process-all

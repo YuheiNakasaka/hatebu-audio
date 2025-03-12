@@ -95,3 +95,15 @@ export interface ProcessResult<T> {
   message?: string;
   error?: Error;
 }
+
+/**
+ * 結合音声ファイルの型定義
+ */
+export interface MergedAudioFile {
+  id?: number;
+  name: string;
+  file_path: string;
+  source_files: number[]; // 元の音声ファイルIDの配列
+  duration?: number;
+  created_at?: Date;
+}

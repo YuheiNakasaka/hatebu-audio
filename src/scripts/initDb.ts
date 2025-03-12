@@ -96,6 +96,18 @@ const db = new sqlite3.Database(dbPath, (err) => {
         FOREIGN KEY (playlist_id) REFERENCES playlists(id),
         FOREIGN KEY (audio_file_id) REFERENCES audio_files(id)
       );
+    `);
+
+    // 結合音声ファイルテーブル
+    db.run(`
+      CREATE TABLE IF NOT EXISTS merged_audio_files (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        file_path TEXT NOT NULL,
+        source_files TEXT NOT NULL,
+        duration INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
     `, (err) => {
       if (err) {
         console.error("Error creating tables:", err.message);

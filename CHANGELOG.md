@@ -6,6 +6,16 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- 音声ファイル結合機能の実装
+  - 複数の音声ファイルを一つのMP3ファイルに結合する機能
+  - プレイリストの音声ファイルを結合する機能
+  - 指定した音声ファイルIDを結合する機能
+  - 結合音声ファイル情報をデータベースに保存する機能
+  - コマンドラインインターフェースの拡張（merge-playlist, merge-audio-files）
+  - 対話型モードの拡張
+
+### Added
+
 - コマンドラインインターフェース(CLI)の実装
   - 対話型モードの実装
   - 各種コマンドの実装（fetch-bookmarks, extract-contents, generate-summaries, generate-narrations, generate-audio-files, process-all）

@@ -17,12 +17,14 @@ graph TD
     E --> F[ナレーション生成モジュール]
     F --> G[音声合成モジュール]
     G --> H[音声ファイル出力]
+    H --> J[音声ファイル結合モジュール]
     I[コマンドラインインターフェース] --> B
     I --> C
     I --> D
     I --> E
     I --> F
     I --> G
+    I --> J
 ```
 
 ### 2.1 各コンポーネントの役割
@@ -52,7 +54,12 @@ graph TD
    - テキストから音声への変換
    - 音声品質の最適化
 
-7. **コマンドラインインターフェース**
+7. **音声ファイル結合モジュール**
+   - 複数の音声ファイルを一つのMP3ファイルに結合
+   - プレイリストの音声ファイルを結合
+   - 指定した音声ファイルIDを結合
+
+8. **コマンドラインインターフェース**
    - ユーザーコマンドの処理
    - 処理状況の表示
    - エラーハンドリング
@@ -130,6 +137,16 @@ CREATE TABLE playlist_items (
     FOREIGN KEY (playlist_id) REFERENCES playlists(id),
     FOREIGN KEY (audio_file_id) REFERENCES audio_files(id)
 );
+
+-- 結合音声ファイルテーブル
+CREATE TABLE merged_audio_files (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    source_files TEXT NOT NULL, -- JSON形式で音声ファイルIDの配列を保存
+    duration INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 ```
 
 ## 5. 技術スタックと依存関係
@@ -205,6 +222,7 @@ hatebu-audio/
 │   │   ├── content/             # コンテンツ抽出
 │   │   ├── narration/           # ナレーション生成
 │   │   ├── tts/                 # 音声合成
+│   │   ├── audio-merge/         # 音声ファイル結合
 │   │   └── database/            # データベース操作
 │   ├── utils/                   # ユーティリティ関数
 │   └── models/                  # データモデル

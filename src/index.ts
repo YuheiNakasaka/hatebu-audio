@@ -7,6 +7,7 @@ import { HatenaBookmarkService } from "./services/bookmark";
 import { WebContentService } from "./services/content";
 import { OpenAINarrationService } from "./services/narration";
 import { GoogleCloudTTSService } from "./services/tts";
+import { DefaultAudioMergeService } from "./services/audio-merge";
 import { ProcessStatus } from "./types";
 
 // 環境変数の読み込み
@@ -17,6 +18,7 @@ const bookmarkService = new HatenaBookmarkService();
 const contentService = new WebContentService();
 const narrationService = new OpenAINarrationService();
 const ttsService = new GoogleCloudTTSService();
+const audioMergeService = new DefaultAudioMergeService();
 
 // コマンドラインインターフェースの設定
 const program = new Command();
@@ -144,6 +146,77 @@ program
           result.data.forEach((audioFile) => {
             console.log(chalk.gray(`    - ${audioFile.file_path}`));
           });
+        }
+      } else if (result.status === ProcessStatus.SKIPPED) {
+        console.log(chalk.yellow(`⚠ ${result.message}`));
+      } else {
+        console.log(chalk.red(`✗ ${result.message}`));
+      }
+    } catch (error) {
+      spinner.stop();
+      console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
+    }
+  });
+
+// プレイリストから音声ファイルを結合するコマンド
+program
+  .command("merge-playlist")
+  .description("プレイリストの音声ファイルを一つのMP3ファイルに結合")
+  .requiredOption("-p, --playlist-id <id>", "プレイリストID")
+  .option("-n, --name <name>", "結合後のファイル名（指定しない場合はプレイリスト名を使用）")
+  .action(async (options) => {
+    const spinner = ora("音声ファイルを結合中...").start();
+    
+    try {
+      const result = await audioMergeService.mergePlaylist(
+        parseInt(options.playlistId),
+        options.name
+      );
+      
+      spinner.stop();
+      
+      if (result.status === ProcessStatus.SUCCESS) {
+        console.log(chalk.green(`✓ ${result.message}`));
+        if (result.data) {
+          console.log(chalk.gray(`  結合された音声ファイル: ${result.data.name}`));
+          console.log(chalk.gray(`  ファイルパス: ${result.data.file_path}`));
+        }
+      } else if (result.status === ProcessStatus.SKIPPED) {
+        console.log(chalk.yellow(`⚠ ${result.message}`));
+      } else {
+        console.log(chalk.red(`✗ ${result.message}`));
+      }
+    } catch (error) {
+      spinner.stop();
+      console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
+    }
+  });
+
+// 指定した音声ファイルを結合するコマンド
+program
+  .command("merge-audio-files")
+  .description("指定した音声ファイルを一つのMP3ファイルに結合")
+  .requiredOption("-i, --ids <ids>", "音声ファイルIDのカンマ区切りリスト")
+  .requiredOption("-n, --name <name>", "結合後のファイル名")
+  .action(async (options) => {
+    const spinner = ora("音声ファイルを結合中...").start();
+    
+    try {
+      // カンマ区切りの文字列を数値の配列に変換
+      const audioFileIds = options.ids.split(",").map((id: string) => parseInt(id.trim()));
+      
+      const result = await audioMergeService.mergeAndSaveAudioFiles(
+        audioFileIds,
+        options.name
+      );
+      
+      spinner.stop();
+      
+      if (result.status === ProcessStatus.SUCCESS) {
+        console.log(chalk.green(`✓ ${result.message}`));
+        if (result.data) {
+          console.log(chalk.gray(`  結合された音声ファイル: ${result.data.name}`));
+          console.log(chalk.gray(`  ファイルパス: ${result.data.file_path}`));
         }
       } else if (result.status === ProcessStatus.SKIPPED) {
         console.log(chalk.yellow(`⚠ ${result.message}`));
@@ -310,6 +383,8 @@ program
           { name: "コンテンツの抽出", value: "extract-contents" },
           { name: "ナレーションの生成", value: "generate-narrations" },
           { name: "音声ファイルの生成", value: "generate-audio-files" },
+          { name: "プレイリストの音声ファイルを結合", value: "merge-playlist" },
+          { name: "指定した音声ファイルを結合", value: "merge-audio-files" },
           { name: "全処理の実行", value: "process-all" },
           { name: "終了", value: "exit" },
         ],
@@ -362,6 +437,65 @@ program
             `--limit=${limit}`,
           ].filter(Boolean));
         }
+      }
+    } else if (action === "merge-playlist") {
+      const { playlistId, name } = await inquirer.prompt([
+        {
+          type: "input",
+          name: "playlistId",
+          message: "プレイリストIDを入力してください:",
+          validate: (value) => {
+            const num = parseInt(value);
+            return !isNaN(num) && num > 0 ? true : "正の整数を入力してください";
+          },
+        },
+        {
+          type: "input",
+          name: "name",
+          message: "結合後のファイル名を入力してください (空欄の場合はプレイリスト名を使用):",
+        },
+      ]);
+      
+      const cmd = program.commands.find((cmd) => cmd.name() === "merge-playlist");
+      if (cmd) {
+        await cmd.parseAsync([
+          process.argv[0],
+          process.argv[1],
+          "merge-playlist",
+          `--playlist-id=${playlistId}`,
+          name ? `--name=${name}` : "",
+        ].filter(Boolean));
+      }
+    } else if (action === "merge-audio-files") {
+      const { ids, name } = await inquirer.prompt([
+        {
+          type: "input",
+          name: "ids",
+          message: "結合する音声ファイルIDをカンマ区切りで入力してください (例: 1,2,3):",
+          validate: (value) => {
+            const ids = value.split(",").map((id: string) => parseInt(id.trim()));
+            return ids.every((id: number) => !isNaN(id) && id > 0) ? true : "カンマ区切りの正の整数を入力してください";
+          },
+        },
+        {
+          type: "input",
+          name: "name",
+          message: "結合後のファイル名を入力してください:",
+          validate: (value) => {
+            return value.trim() !== "" ? true : "ファイル名を入力してください";
+          },
+        },
+      ]);
+      
+      const cmd = program.commands.find((cmd) => cmd.name() === "merge-audio-files");
+      if (cmd) {
+        await cmd.parseAsync([
+          process.argv[0],
+          process.argv[1],
+          "merge-audio-files",
+          `--ids=${ids}`,
+          `--name=${name}`,
+        ]);
       }
     } else {
       const { limit } = await inquirer.prompt([
