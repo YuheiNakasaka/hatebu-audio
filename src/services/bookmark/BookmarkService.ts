@@ -47,7 +47,11 @@ export class HatenaBookmarkService implements BookmarkService {
    */
   constructor() {
     this.bookmarkModel = new BookmarkModel();
-    this.parser = new RssParser();
+    this.parser = new RssParser({
+      customFields: {
+        item: ["dc:subject"]
+      }
+    });
   }
 
   /**
@@ -79,7 +83,7 @@ export class HatenaBookmarkService implements BookmarkService {
           link: item.link || "",
           pubDate: item.pubDate || new Date().toISOString(),
           description: item.contentSnippet || "",
-          categories: item.categories || [],
+          categories: item.categories || (item["dc:subject"] ? [item["dc:subject"]] : []),
         }));
 
       return bookmarkItems;
@@ -175,9 +179,12 @@ export class HatenaBookmarkService implements BookmarkService {
     try {
       // ブックマークの取得
       const bookmarkItems = await this.fetchBookmarks(username, limit);
+
+      // タグがついているものだけを保存
+      const filteredBookmarkItems = bookmarkItems.filter((item) => item.categories && item.categories.length > 0);
       
       // ブックマークの保存
-      return await this.saveBookmarks(bookmarkItems);
+      return await this.saveBookmarks(filteredBookmarkItems);
     } catch (error) {
       if (error instanceof Error) {
         return {

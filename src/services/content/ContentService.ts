@@ -1,7 +1,7 @@
 import { Content, ProcessResult, ProcessStatus } from "../../types";
 import { ContentModel, BookmarkModel } from "../../models";
 import axios from "axios";
-import cheerio from "cheerio";
+import * as cheerio from "cheerio";
 import pdfParse from "pdf-parse";
 import TurndownService from "turndown";
 import fs from "fs";
@@ -259,10 +259,10 @@ export class WebContentService implements ContentService {
 
   /**
    * 未処理のブックマークからコンテンツを抽出して保存
-   * @param limit 処理する最大件数（デフォルト: 10）
+   * @param limit 処理する最大件数（デフォルト: 20）
    * @returns 処理結果
    */
-  async processUnprocessedBookmarks(limit = 10): Promise<ProcessResult<Content[]>> {
+  async processUnprocessedBookmarks(limit = 20): Promise<ProcessResult<Content[]>> {
     try {
       // 未処理のブックマークを取得
       const unprocessedBookmarks = await this.bookmarkModel.findUnprocessed(limit);

@@ -68,7 +68,7 @@ export class OpenAISummaryService implements SummaryService {
 
     try {
       // コンテンツの長さを確認し、必要に応じて切り詰める
-      const maxTokens = 4000; // GPT-3.5-turboの最大トークン数の約半分
+      const maxTokens = 60000; // GPT-4o-miniの最大トークン数の約半分
       let truncatedContent = content;
       
       // 簡易的なトークン数の見積もり（日本語の場合は文字数の約2倍がトークン数の目安）
@@ -79,18 +79,22 @@ export class OpenAISummaryService implements SummaryService {
 
       // OpenAI APIを使用して要約を生成
       const response = await this.openai.createChatCompletion({
-        model: "gpt-3.5-turbo",
+        model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
-            content: "あなたは優秀な要約者です。与えられたテキストを600〜800字程度で要約してください。要点を押さえ、重要な情報を漏らさないようにしてください。",
+            content: `
+あなたは優秀な放送作家です。与えられた情報をもとに、ラジオMCが読み上げる台本を作成してください。
+ラジオは楽しい雰囲気で、スピーカーは日本のFMラジオのような喋り方をします。ラジオのMCは1人で、名前は「サラ」です。サラは気さくで陽気な人物です。口調は優しく丁寧で、フレンドリーです。
+記事の紹介、内容の解説、この記事に登場した一般的なソフトウェアエンジニアにとって難しめな概念や用語があればその補足解説、最後にMCなりの視点での感想を含めてください。
+聞き手が内容を理解しやすいよう工夫してください。生成する文章はそのまま読み上げられるので不要な記号文字などは含まないでください。絶対に前後に挨拶や結びの文章は含めず、本題に関する話だけを作成してください。ここで作成された台本`,
           },
           {
             role: "user",
-            content: `以下の記事を要約してください:\n\n${truncatedContent}`,
+            content: `以下の記事を基に台本を作成してください:\n\n${truncatedContent}`,
           },
         ],
-        max_tokens: 1000,
+        max_tokens: 6000,
         temperature: 0.5,
       });
 

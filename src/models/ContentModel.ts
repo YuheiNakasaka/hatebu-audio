@@ -90,6 +90,27 @@ export class ContentModel {
   }
 
   /**
+   * 全コンテンツの取得
+   * @param limit 取得件数（デフォルト: 100）
+   * @param offset 開始位置（デフォルト: 0）
+   * @returns コンテンツ情報の配列
+   */
+  async findAll(limit = 100, offset = 0): Promise<Content[]> {
+    await this.db.connect();
+
+    const sql = "SELECT * FROM contents ORDER BY extracted_at DESC LIMIT ? OFFSET ?";
+    const contents = await this.db.all<Content>(sql, [limit, offset]);
+
+    // 日付文字列をDateオブジェクトに変換
+    return contents.map((content) => {
+      if (content.extracted_at && typeof content.extracted_at === "string") {
+        content.extracted_at = new Date(content.extracted_at);
+      }
+      return content;
+    });
+  }
+
+  /**
    * コンテンツの更新
    * @param id コンテンツID
    * @param content 更新するコンテンツ情報

@@ -1,5 +1,5 @@
 import { Narration, Summary, ProcessResult, ProcessStatus } from "../../types";
-import { NarrationModel, SummaryModel, BookmarkModel } from "../../models";
+import { NarrationModel, ContentModel, BookmarkModel } from "../../models";
 import { Configuration, OpenAIApi } from "openai";
 import dotenv from "dotenv";
 
@@ -38,7 +38,7 @@ export interface NarrationService {
  */
 export class OpenAINarrationService implements NarrationService {
   private narrationModel: NarrationModel;
-  private summaryModel: SummaryModel;
+  private contentModel: ContentModel;
   private bookmarkModel: BookmarkModel;
   private openai: OpenAIApi;
 
@@ -47,7 +47,7 @@ export class OpenAINarrationService implements NarrationService {
    */
   constructor() {
     this.narrationModel = new NarrationModel();
-    this.summaryModel = new SummaryModel();
+    this.contentModel = new ContentModel();
     this.bookmarkModel = new BookmarkModel();
 
     // OpenAI APIの設定
@@ -71,18 +71,27 @@ export class OpenAINarrationService implements NarrationService {
     try {
       // OpenAI APIを使用してナレーションを生成
       const response = await this.openai.createChatCompletion({
-        model: "gpt-3.5-turbo",
+        model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
-            content: "あなたは優秀なポッドキャストのナレーターです。与えられた要約を、1人のナレーターによるポッドキャスト形式に変換してください。記事の紹介、内容の解説、最後に簡潔なコメントを含めてください。カジュアルで親しみやすい口調を使用し、聞き手が内容を理解しやすいよう工夫してください。",
+            content: `あなたは優秀な放送作家です。与えられた情報をもとに、ラジオMCが読み上げる台本を作成してください。
+ラジオは楽しい雰囲気で、スピーカーは日本のFMラジオのような喋り方をします。ラジオのMCは1人で、名前は「サラ」です。サラは気さくで陽気な人物です。口調は優しく丁寧で、フレンドリーです。
+記事の紹介、内容の解説、この記事に登場した一般的なソフトウェアエンジニアにとって難しめな概念や用語があればその補足解説、最後にMCなりの視点での感想を含めてください。
+聞き手が内容を理解しやすいよう工夫してください。生成する文章はそのまま読み上げられるので不要な記号文字などは含まないでください。下記の絶対に守るべきことを守れない場合は台本は使われませんし、あなたはクビになります。
+
+# 絶対守るべきこと
+- 「皆さん」や「こんにちは」や「それではまた次回」といった最初の挨拶や結びの文章を含めないこと
+- 「サラです」といった自己紹介をしないこと
+- 「<記事のタイトル>について紹介します。この記事は〜」といった感じの書き出しで台本を作成すること
+`
           },
           {
             role: "user",
-            content: `以下の記事「${title}」の要約をポッドキャスト形式に変換してください:\n\n${summary}`,
+            content: `以下の記事「${title}」をラジオの台本形式に変換してください:\n\n${summary}`,
           },
         ],
-        max_tokens: 1500,
+        max_tokens: 4000,
         temperature: 0.7,
       });
 
@@ -128,9 +137,9 @@ export class OpenAINarrationService implements NarrationService {
         };
       }
 
-      // 要約の取得
-      const summary = await this.summaryModel.findByBookmarkId(bookmarkId);
-      if (!summary) {
+      // コンテンツの取得
+      const content = await this.contentModel.findByBookmarkId(bookmarkId);
+      if (!content) {
         return {
           status: ProcessStatus.ERROR,
           message: `要約が見つかりません: ブックマークID ${bookmarkId}`,
@@ -138,7 +147,7 @@ export class OpenAINarrationService implements NarrationService {
       }
 
       // ナレーションの生成
-      const narrationText = await this.generateNarration(summary.summary_text, bookmark.title);
+      const narrationText = await this.generateNarration(content.raw_content, bookmark.title);
 
       // ナレーションの保存
       const narration: Narration = {
@@ -182,16 +191,16 @@ export class OpenAINarrationService implements NarrationService {
         }
       });
 
-      // 要約を持つブックマークを取得
-      const summaries = await this.summaryModel.findAll();
+      // コンテンツを持つブックマークを取得
+      const contents = await this.contentModel.findAll();
       const unprocessedBookmarkIds: number[] = [];
 
-      for (const summary of summaries) {
-        if (!summary.bookmark_id || processedBookmarkIds.has(summary.bookmark_id)) {
+      for (const content of contents) {
+        if (!content.bookmark_id || processedBookmarkIds.has(content.bookmark_id)) {
           continue;
         }
 
-        unprocessedBookmarkIds.push(summary.bookmark_id);
+        unprocessedBookmarkIds.push(content.bookmark_id);
 
         // 上限に達したら終了
         if (unprocessedBookmarkIds.length >= limit) {
@@ -202,7 +211,7 @@ export class OpenAINarrationService implements NarrationService {
       if (unprocessedBookmarkIds.length === 0) {
         return {
           status: ProcessStatus.SKIPPED,
-          message: "未処理の要約はありません。",
+          message: "未処理のコンテンツはありません。",
           data: [],
         };
       }
