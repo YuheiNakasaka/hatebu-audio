@@ -1,0 +1,17 @@
+.footer {
+  background-color: var(--light-gray);
+  padding: 2rem 0;
+  margin-top: 2rem;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  text-align: center;
+}
+
+.copyright {
+  color: var(--dark-gray);
+  font-size: 0.9rem;
+}

@@ -4,3 +4,4 @@ export { NarrationModel } from "./NarrationModel";
 export { AudioFileModel } from "./AudioFileModel";
 export { PlaylistModel } from "./PlaylistModel";
 export { MergedAudioFileModel } from "./MergedAudioFileModel";
+export { PodcastEpisodeModel, PodcastSettingsModel } from "./podcast";

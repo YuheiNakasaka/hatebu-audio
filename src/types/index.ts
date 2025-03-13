@@ -107,3 +107,37 @@ export interface MergedAudioFile {
   duration?: number;
   created_at?: Date;
 }
+
+/**
+ * Podcastエピソードの型定義
+ */
+export interface PodcastEpisode {
+  id?: number;
+  merged_audio_file_id: number;
+  title: string;
+  description?: string;
+  source_bookmarks?: number[]; // 元のブックマークIDの配列
+  published_at?: string;
+  duration?: number;
+  file_size?: number;
+  storage_url?: string;
+  is_published?: boolean;
+}
+
+/**
+ * Podcast設定の型定義
+ */
+export interface PodcastSettings {
+  id?: number;
+  title: string;
+  description?: string;
+  author?: string;
+  email?: string;
+  language?: string;
+  category?: string;
+  explicit?: boolean;
+  image_url?: string;
+  website_url?: string;
+  feed_url?: string;
+  updated_at?: Date;
+}

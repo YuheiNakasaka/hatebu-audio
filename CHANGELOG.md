@@ -6,6 +6,19 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Podcast配信用Webサイトの実装
+  - Next.jsを使用したWebサイトの実装
+  - エピソード一覧ページと詳細ページの実装
+  - 音声プレイヤーコンポーネントの実装
+  - レスポンシブデザインの適用
+  - SQLiteデータベースからのデータ取得機能
+  - 静的サイト生成（SSG）の設定
+
+- Cloudflare Pagesデプロイ機能の修正
+  - デプロイスクリプトのバグ修正
+  - エラーハンドリングの強化
+  - ビルドスクリプトの最適化
+
 - 音声ファイル結合時に無音を挿入する機能の追加
   - 音声ファイル間に2.5秒の無音を自動的に挿入
   - FFmpegのcomplexFilterを使用して効率的に実装

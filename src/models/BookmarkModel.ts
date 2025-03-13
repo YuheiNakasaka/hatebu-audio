@@ -1,5 +1,5 @@
 import { DatabaseService } from "../services/database/DatabaseService";
-import { Bookmark } from "../types";
+import { Bookmark, AudioFile } from "../types";
 
 /**
  * ブックマーク情報を管理するモデルクラス
@@ -104,6 +104,57 @@ export class BookmarkModel {
     }
 
     return bookmark;
+  }
+
+  /**
+   * 音声ファイルIDによるブックマークの取得
+   * @param audioFileId 音声ファイルID
+   * @returns 音声ファイルとブックマーク情報
+   */
+  async findByAudioFileId(audioFileId: number): Promise<{ audio_file: AudioFile; bookmark: Bookmark } | null> {
+    await this.db.connect();
+
+    const sql = `
+      SELECT 
+        a.*, b.*,
+        a.id as audio_file_id, b.id as bookmark_id,
+        a.created_at as audio_file_created_at, b.created_at as bookmark_created_at
+      FROM 
+        audio_files a
+      JOIN 
+        bookmarks b ON a.bookmark_id = b.id
+      WHERE 
+        a.id = ?
+    `;
+    
+    const result = await this.db.get<any>(sql, [audioFileId]);
+
+    if (!result) {
+      return null;
+    }
+
+    // 結果を音声ファイルとブックマークに分割
+    const audioFile: AudioFile = {
+      id: result.audio_file_id,
+      bookmark_id: result.bookmark_id,
+      file_path: result.file_path,
+      duration: result.duration,
+      generated_at: result.audio_file_created_at ? new Date(result.audio_file_created_at) : undefined,
+    };
+
+    const bookmark: Bookmark = {
+      id: result.bookmark_id,
+      url: result.url,
+      title: result.title,
+      description: result.description,
+      bookmark_date: result.bookmark_date ? new Date(result.bookmark_date) : new Date(),
+      tags: result.tags,
+      content_type: result.content_type,
+      processed: !!result.processed,
+      created_at: result.bookmark_created_at ? new Date(result.bookmark_created_at) : undefined,
+    };
+
+    return { audio_file: audioFile, bookmark };
   }
 
   /**

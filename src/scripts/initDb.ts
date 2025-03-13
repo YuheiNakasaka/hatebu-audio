@@ -108,6 +108,41 @@ const db = new sqlite3.Database(dbPath, (err) => {
         duration INTEGER,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
+    `);
+
+    // Podcastエピソードテーブル（新規追加）
+    db.run(`
+      CREATE TABLE IF NOT EXISTS podcast_episodes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        merged_audio_file_id INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT,
+        source_bookmarks TEXT,
+        published_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        duration INTEGER,
+        file_size INTEGER,
+        storage_url TEXT,
+        is_published BOOLEAN DEFAULT FALSE,
+        FOREIGN KEY (merged_audio_file_id) REFERENCES merged_audio_files(id)
+      );
+    `);
+
+    // Podcastシリーズ設定テーブル（新規追加）
+    db.run(`
+      CREATE TABLE IF NOT EXISTS podcast_settings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL DEFAULT 'Yuhei Nakasakaのはてなブックマークラジオ',
+        description TEXT DEFAULT 'はてなブックマークの記事を要約して音声化したポッドキャスト',
+        author TEXT DEFAULT 'Yuhei Nakasaka',
+        email TEXT,
+        language TEXT DEFAULT 'ja',
+        category TEXT DEFAULT 'Technology',
+        explicit BOOLEAN DEFAULT FALSE,
+        image_url TEXT,
+        website_url TEXT,
+        feed_url TEXT,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
     `, (err) => {
       if (err) {
         console.error("Error creating tables:", err.message);
@@ -115,21 +150,69 @@ const db = new sqlite3.Database(dbPath, (err) => {
         db.close();
         process.exit(1);
       } else {
-        db.run("COMMIT;", (err) => {
+        // デフォルトのPodcast設定を挿入
+        db.get("SELECT COUNT(*) as count FROM podcast_settings", (err, row: { count: number }) => {
           if (err) {
-            console.error("Error committing transaction:", err.message);
+            console.error("Error checking podcast settings:", err.message);
+            db.run("ROLLBACK;");
+            db.close();
+            process.exit(1);
+          } else if (row.count === 0) {
+            // 設定がまだ存在しない場合は挿入
+            db.run(`
+              INSERT INTO podcast_settings (
+                title, description, author, language, category, explicit
+              ) VALUES (
+                'Yuhei Nakasakaのはてなブックマークラジオ',
+                'はてなブックマークの記事を要約して音声化したポッドキャスト',
+                'Yuhei Nakasaka',
+                'ja',
+                'Technology',
+                0
+              );
+            `, (err) => {
+              if (err) {
+                console.error("Error inserting default podcast settings:", err.message);
+                db.run("ROLLBACK;");
+                db.close();
+                process.exit(1);
+              } else {
+                db.run("COMMIT;", (err) => {
+                  if (err) {
+                    console.error("Error committing transaction:", err.message);
+                  } else {
+                    console.log("Database schema created successfully");
+                  }
+                  
+                  // データベース接続のクローズ
+                  db.close((err) => {
+                    if (err) {
+                      console.error("Error closing database:", err.message);
+                    } else {
+                      console.log("Database connection closed");
+                    }
+                  });
+                });
+              }
+            });
           } else {
-            console.log("Database schema created successfully");
+            db.run("COMMIT;", (err) => {
+              if (err) {
+                console.error("Error committing transaction:", err.message);
+              } else {
+                console.log("Database schema created successfully");
+              }
+              
+              // データベース接続のクローズ
+              db.close((err) => {
+                if (err) {
+                  console.error("Error closing database:", err.message);
+                } else {
+                  console.log("Database connection closed");
+                }
+              });
+            });
           }
-          
-          // データベース接続のクローズ
-          db.close((err) => {
-            if (err) {
-              console.error("Error closing database:", err.message);
-            } else {
-              console.log("Database connection closed");
-            }
-          });
         });
       }
     });

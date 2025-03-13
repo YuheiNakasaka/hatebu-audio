@@ -18,3 +18,6 @@ export * from "./playlist";
 
 // 音声ファイル結合サービス
 export * from "./audio-merge";
+
+// Podcast配信サービス
+export * from "./podcast";

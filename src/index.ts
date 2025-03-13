@@ -1,6 +1,5 @@
 import dotenv from "dotenv";
 import { Command } from "commander";
-import inquirer from "inquirer";
 import chalk from "chalk";
 import ora from "ora";
 import fs from "fs";
@@ -10,6 +9,7 @@ import { WebContentService } from "./services/content";
 import { OpenAINarrationService } from "./services/narration";
 import { GoogleCloudTTSService } from "./services/tts";
 import { DefaultAudioMergeService } from "./services/audio-merge";
+import { PodcastService } from "./services/podcast";
 import { ProcessStatus } from "./types";
 
 // 環境変数の読み込み
@@ -21,6 +21,7 @@ const contentService = new WebContentService();
 const narrationService = new OpenAINarrationService();
 const ttsService = new GoogleCloudTTSService();
 const audioMergeService = new DefaultAudioMergeService();
+const podcastService = new PodcastService();
 
 // コマンドラインインターフェースの設定
 const program = new Command();
@@ -434,211 +435,239 @@ program
     console.log(chalk.blue("\n=== はてなブックマーク音声化処理完了 ==="));
   });
 
-// ヘルプコマンド
+// Podcast設定更新コマンド
 program
-  .command("help")
-  .description("ヘルプを表示")
-  .action(() => {
-    program.outputHelp();
+  .command("update-podcast-settings")
+  .description("Podcast設定を更新")
+  .option("-t, --title <title>", "Podcastのタイトル")
+  .option("-d, --description <description>", "Podcastの説明")
+  .option("-a, --author <author>", "著者名")
+  .option("-e, --email <email>", "連絡先メールアドレス")
+  .option("-l, --language <language>", "言語（例: ja）")
+  .option("-c, --category <category>", "カテゴリ（例: Technology）")
+  .option("-x, --explicit", "露骨な表現を含む場合はtrueに設定")
+  .option("-i, --image-url <imageUrl>", "アートワーク画像のURL")
+  .action(async (options) => {
+    const spinner = ora("Podcast設定を更新中...").start();
+    
+    try {
+      const settings: any = {};
+      
+      if (options.title) settings.title = options.title;
+      if (options.description) settings.description = options.description;
+      if (options.author) settings.author = options.author;
+      if (options.email) settings.email = options.email;
+      if (options.language) settings.language = options.language;
+      if (options.category) settings.category = options.category;
+      if (options.explicit !== undefined) settings.explicit = options.explicit;
+      if (options.imageUrl) settings.image_url = options.imageUrl;
+      
+      const result = await podcastService.updateSettings(settings);
+      
+      spinner.stop();
+      
+      if (result.status === ProcessStatus.SUCCESS) {
+        console.log(chalk.green(`✓ ${result.message}`));
+        if (result.data) {
+          console.log(chalk.gray("  更新された設定:"));
+          console.log(chalk.gray(`    タイトル: ${result.data.title}`));
+          console.log(chalk.gray(`    説明: ${result.data.description}`));
+          console.log(chalk.gray(`    著者: ${result.data.author}`));
+          console.log(chalk.gray(`    言語: ${result.data.language}`));
+          console.log(chalk.gray(`    カテゴリ: ${result.data.category}`));
+        }
+      } else {
+        console.log(chalk.red(`✗ ${result.message}`));
+      }
+    } catch (error) {
+      spinner.stop();
+      console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
+    }
   });
 
-// 対話型モード
+// エピソード公開コマンド
 program
-  .command("interactive")
-  .description("対話型モードで実行")
+  .command("publish-episode")
+  .description("音声ファイルをアップロードしてPodcastエピソードとして公開")
+  .requiredOption("-f, --file-id <id>", "結合音声ファイルID")
+  .option("-t, --title <title>", "エピソードのタイトル")
+  .option("-d, --description <description>", "エピソードの説明")
+  .option("-a, --auto-metadata", "メタデータを自動生成する")
+  .action(async (options) => {
+    const spinner = ora("エピソードを公開中...").start();
+    
+    try {
+      const result = await podcastService.publishEpisode(
+        parseInt(options.fileId),
+        {
+          title: options.title,
+          description: options.description,
+          autoMetadata: options.autoMetadata,
+        }
+      );
+      
+      spinner.stop();
+      
+      if (result.status === ProcessStatus.SUCCESS) {
+        console.log(chalk.green(`✓ ${result.message}`));
+        if (result.data) {
+          console.log(chalk.gray(`  エピソードタイトル: ${result.data.title}`));
+          console.log(chalk.gray(`  ストレージURL: ${result.data.storage_url}`));
+        }
+      } else if (result.status === ProcessStatus.SKIPPED) {
+        console.log(chalk.yellow(`⚠ ${result.message}`));
+      } else {
+        console.log(chalk.red(`✗ ${result.message}`));
+      }
+    } catch (error) {
+      spinner.stop();
+      console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
+    }
+  });
+
+// RSSフィード生成コマンド
+program
+  .command("generate-feed")
+  .description("Podcast用のRSSフィードを生成")
   .action(async () => {
-    console.log(chalk.blue("=== はてなブックマーク音声化システム - 対話型モード ===\n"));
+    const spinner = ora("RSSフィードを生成中...").start();
     
-    const { action } = await inquirer.prompt([
-      {
-        type: "list",
-        name: "action",
-        message: "実行する操作を選択してください:",
-        choices: [
-          { name: "ブックマーク情報の取得", value: "fetch-bookmarks" },
-          { name: "コンテンツの抽出", value: "extract-contents" },
-          { name: "ナレーションの生成", value: "generate-narrations" },
-          { name: "音声ファイルの生成", value: "generate-audio-files" },
-          { name: "プレイリストの音声ファイルを結合", value: "merge-playlist" },
-          { name: "指定した音声ファイルを結合", value: "merge-audio-files" },
-          { name: "未処理の音声ファイルを結合", value: "merge-unprocessed" },
-          { name: "全処理の実行", value: "process-all" },
-          { name: "終了", value: "exit" },
-        ],
-      },
-    ]);
+    try {
+      const result = await podcastService.generateAndDeployFeed();
+      
+      spinner.stop();
+      
+      if (result.status === ProcessStatus.SUCCESS) {
+        console.log(chalk.green(`✓ ${result.message}`));
+        if (result.data) {
+          console.log(chalk.gray(`  フィードURL: ${result.data}`));
+        }
+      } else if (result.status === ProcessStatus.SKIPPED) {
+        console.log(chalk.yellow(`⚠ ${result.message}`));
+      } else {
+        console.log(chalk.red(`✗ ${result.message}`));
+      }
+    } catch (error) {
+      spinner.stop();
+      console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
+    }
+  });
+
+// Webサイトデプロイコマンド
+program
+  .command("deploy-website")
+  .description("PodcastのWebサイトをデプロイ")
+  .action(async () => {
+    const spinner = ora("Webサイトをデプロイ中...").start();
     
-    if (action === "exit") {
-      console.log(chalk.blue("システムを終了します。"));
+    try {
+      const result = await podcastService.deployWebsite();
+      
+      spinner.stop();
+      
+      if (result.status === ProcessStatus.SUCCESS) {
+        console.log(chalk.green(`✓ ${result.message}`));
+        if (result.data) {
+          console.log(chalk.gray(`  WebサイトURL: ${result.data}`));
+        }
+      } else {
+        console.log(chalk.red(`✗ ${result.message}`));
+      }
+    } catch (error) {
+      spinner.stop();
+      console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
+    }
+  });
+
+// Podcast公開コマンド（音声ファイルのアップロード、RSSフィード生成、Webサイトデプロイを一括実行）
+program
+  .command("publish-podcast")
+  .description("音声ファイルをアップロードしてPodcastとして公開（RSSフィード生成、Webサイトデプロイを含む）")
+  .requiredOption("-f, --file-id <id>", "結合音声ファイルID")
+  .option("-t, --title <title>", "エピソードのタイトル")
+  .option("-d, --description <description>", "エピソードの説明")
+  .option("-a, --auto-metadata", "メタデータを自動生成する")
+  .action(async (options) => {
+    console.log(chalk.blue("=== Podcast公開処理開始 ==="));
+    
+    // エピソード公開
+    console.log(chalk.blue("\n1. エピソードの公開"));
+    const spinner1 = ora("エピソードを公開中...").start();
+    
+    try {
+      const result1 = await podcastService.publishEpisode(
+        parseInt(options.fileId),
+        {
+          title: options.title,
+          description: options.description,
+          autoMetadata: options.autoMetadata,
+        }
+      );
+      
+      spinner1.stop();
+      
+      if (result1.status === ProcessStatus.SUCCESS) {
+        console.log(chalk.green(`✓ ${result1.message}`));
+        if (result1.data) {
+          console.log(chalk.gray(`  エピソードタイトル: ${result1.data.title}`));
+          console.log(chalk.gray(`  ストレージURL: ${result1.data.storage_url}`));
+        }
+      } else if (result1.status === ProcessStatus.SKIPPED) {
+        console.log(chalk.yellow(`⚠ ${result1.message}`));
+      } else {
+        console.log(chalk.red(`✗ ${result1.message}`));
+        return;
+      }
+    } catch (error) {
+      spinner1.stop();
+      console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
       return;
     }
     
-    if (action === "fetch-bookmarks" || action === "process-all") {
-      const { username, limit } = await inquirer.prompt([
-        {
-          type: "input",
-          name: "username",
-          message: "はてなユーザー名を入力してください (環境変数を使用する場合は空欄):",
-        },
-        {
-          type: "input",
-          name: "limit",
-          message: "処理する最大件数を入力してください:",
-          default: action === "process-all" ? "5" : "20",
-          validate: (value) => {
-            const num = parseInt(value);
-            return !isNaN(num) && num > 0 ? true : "正の整数を入力してください";
-          },
-        },
-      ]);
+    // RSSフィード生成
+    console.log(chalk.blue("\n2. RSSフィードの生成"));
+    const spinner2 = ora("RSSフィードを生成中...").start();
+    
+    try {
+      const result2 = await podcastService.generateAndDeployFeed();
       
-      if (action === "fetch-bookmarks") {
-        const cmd = program.commands.find((cmd) => cmd.name() === "fetch-bookmarks");
-        if (cmd) {
-          await cmd.parseAsync([
-            process.argv[0],
-            process.argv[1],
-            "fetch-bookmarks",
-            username ? `--username=${username}` : "",
-            `--limit=${limit}`,
-          ].filter(Boolean));
+      spinner2.stop();
+      
+      if (result2.status === ProcessStatus.SUCCESS) {
+        console.log(chalk.green(`✓ ${result2.message}`));
+        if (result2.data) {
+          console.log(chalk.gray(`  フィードURL: ${result2.data}`));
         }
+      } else if (result2.status === ProcessStatus.SKIPPED) {
+        console.log(chalk.yellow(`⚠ ${result2.message}`));
       } else {
-        const cmd = program.commands.find((cmd) => cmd.name() === "process-all");
-        if (cmd) {
-          await cmd.parseAsync([
-            process.argv[0],
-            process.argv[1],
-            "process-all",
-            username ? `--username=${username}` : "",
-            `--limit=${limit}`,
-          ].filter(Boolean));
-        }
+        console.log(chalk.red(`✗ ${result2.message}`));
       }
-    } else if (action === "merge-playlist") {
-      const { playlistId, name } = await inquirer.prompt([
-        {
-          type: "input",
-          name: "playlistId",
-          message: "プレイリストIDを入力してください:",
-          validate: (value) => {
-            const num = parseInt(value);
-            return !isNaN(num) && num > 0 ? true : "正の整数を入力してください";
-          },
-        },
-        {
-          type: "input",
-          name: "name",
-          message: "結合後のファイル名を入力してください (空欄の場合はプレイリスト名を使用):",
-        },
-      ]);
-      
-      const cmd = program.commands.find((cmd) => cmd.name() === "merge-playlist");
-      if (cmd) {
-        await cmd.parseAsync([
-          process.argv[0],
-          process.argv[1],
-          "merge-playlist",
-          `--playlist-id=${playlistId}`,
-          name ? `--name=${name}` : "",
-        ].filter(Boolean));
-      }
-    } else if (action === "merge-audio-files") {
-      const { ids, name } = await inquirer.prompt([
-        {
-          type: "input",
-          name: "ids",
-          message: "結合する音声ファイルIDをカンマ区切りで入力してください (例: 1,2,3):",
-          validate: (value) => {
-            const ids = value.split(",").map((id: string) => parseInt(id.trim()));
-            return ids.every((id: number) => !isNaN(id) && id > 0) ? true : "カンマ区切りの正の整数を入力してください";
-          },
-        },
-        {
-          type: "input",
-          name: "name",
-          message: "結合後のファイル名を入力してください:",
-          validate: (value) => {
-            return value.trim() !== "" ? true : "ファイル名を入力してください";
-          },
-        },
-      ]);
-      
-      const cmd = program.commands.find((cmd) => cmd.name() === "merge-audio-files");
-      if (cmd) {
-        await cmd.parseAsync([
-          process.argv[0],
-          process.argv[1],
-          "merge-audio-files",
-          `--ids=${ids}`,
-          `--name=${name}`,
-        ]);
-      }
-    } else if (action === "merge-unprocessed") {
-      const { name } = await inquirer.prompt([
-        {
-          type: "input",
-          name: "name",
-          message: "結合後のファイル名を入力してください (空欄の場合は自動生成):",
-        },
-      ]);
-      
-      const cmd = program.commands.find((cmd) => cmd.name() === "merge-unprocessed");
-      if (cmd) {
-        await cmd.parseAsync([
-          process.argv[0],
-          process.argv[1],
-          "merge-unprocessed",
-          name ? `--name=${name}` : "",
-        ].filter(Boolean));
-      }
-    } else {
-      const { limit } = await inquirer.prompt([
-        {
-          type: "input",
-          name: "limit",
-          message: "処理する最大件数を入力してください:",
-          default: "10",
-          validate: (value) => {
-            const num = parseInt(value);
-            return !isNaN(num) && num > 0 ? true : "正の整数を入力してください";
-          },
-        },
-      ]);
-      
-      const cmd = program.commands.find((cmd) => cmd.name() === action);
-      if (cmd) {
-        await cmd.parseAsync([
-          process.argv[0],
-          process.argv[1],
-          action,
-          `--limit=${limit}`,
-        ]);
-      }
+    } catch (error) {
+      spinner2.stop();
+      console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
     }
     
-    // 続行の確認
-    const { continue: shouldContinue } = await inquirer.prompt([
-      {
-        type: "confirm",
-        name: "continue",
-        message: "続けて操作を行いますか?",
-        default: true,
-      },
-    ]);
+    // Webサイトデプロイ
+    console.log(chalk.blue("\n3. Webサイトのデプロイ"));
+    const spinner3 = ora("Webサイトをデプロイ中...").start();
     
-    if (shouldContinue) {
-      // 対話型モードを再帰的に呼び出し
-      const cmd = program.commands.find((cmd) => cmd.name() === "interactive");
-      if (cmd) {
-        await cmd.parseAsync([
-          process.argv[0],
-          process.argv[1],
-          "interactive",
-        ]);
+    try {
+      const result3 = await podcastService.deployWebsite();
+      
+      spinner3.stop();
+      
+      if (result3.status === ProcessStatus.SUCCESS) {
+        console.log(chalk.green(`✓ ${result3.message}`));
+        if (result3.data) {
+          console.log(chalk.gray(`  WebサイトURL: ${result3.data}`));
+        }
+      } else {
+        console.log(chalk.red(`✗ ${result3.message}`));
       }
-    } else {
-      console.log(chalk.blue("システムを終了します。"));
+    } catch (error) {
+      spinner3.stop();
+      console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
     }
   });
 

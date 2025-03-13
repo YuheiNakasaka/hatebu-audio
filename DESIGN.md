@@ -2,7 +2,7 @@
 
 ## 1. システム概要
 
-このシステムは、ユーザーのはてなブックマークから記事やPDFを取得し、内容を要約して1人のナレーターによる解説形式の音声ファイル（MP3）を生成するTypeScriptアプリケーションです。ローカルPCで動作し、SQLiteでデータを管理します。
+このシステムは、ユーザーのはてなブックマークから記事やPDFを取得し、内容を要約して1人のナレーターによる解説形式の音声ファイル（MP3）を生成するTypeScriptアプリケーションです。ローカルPCで動作し、SQLiteでデータを管理します。また、生成された音声ファイルをPodcastとして配信する機能も備えています。
 
 ## 2. システムアーキテクチャ
 
@@ -18,6 +18,12 @@ graph TD
     F --> G[音声合成モジュール]
     G --> H[音声ファイル出力]
     H --> J[音声ファイル結合モジュール]
+    J --> K[Podcast配信モジュール]
+    K --> L[Cloudflare R2ストレージ]
+    K --> M[RSSフィード生成]
+    K --> N[Webサイト生成]
+    M --> O[Podcast配信]
+    N --> P[Cloudflare Pages]
     I[コマンドラインインターフェース] --> B
     I --> C
     I --> D
@@ -25,6 +31,7 @@ graph TD
     I --> F
     I --> G
     I --> J
+    I --> K
 ```
 
 ### 2.1 各コンポーネントの役割
@@ -65,7 +72,14 @@ graph TD
      - 終了時の結び音声ファイル（radio_outro.mp3）を自動生成
      - 結合時に挨拶→本編→結びの順で音声ファイルを結合
 
-8. **コマンドラインインターフェース**
+8. **Podcast配信モジュール**
+   - 音声ファイルをCloudflare R2にアップロード
+   - エピソードのメタデータを自動生成
+   - RSSフィードの生成
+   - Webサイトの生成とデプロイ
+   - エピソードの公開管理
+
+9. **コマンドラインインターフェース**
    - ユーザーコマンドの処理
    - 処理状況の表示
    - エラーハンドリング
@@ -82,6 +96,10 @@ graph TD
 8. 処理結果をデータベースに記録
 9. 挨拶と結びの音声ファイルを生成（初回のみ）
 10. 未処理の音声ファイルを挨拶→本編→結びの順で結合
+11. 結合された音声ファイルをCloudflare R2にアップロード
+12. エピソードのメタデータを自動生成
+13. RSSフィードを更新
+14. Webサイトを生成してCloudflare Pagesにデプロイ
 
 ## 4. データベーススキーマ
 
@@ -155,6 +173,37 @@ CREATE TABLE merged_audio_files (
     duration INTEGER,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Podcastエピソードテーブル（新規追加）
+CREATE TABLE podcast_episodes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    merged_audio_file_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    source_bookmarks TEXT, -- JSON形式でブックマークIDの配列を保存
+    published_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    duration INTEGER,
+    file_size INTEGER,
+    storage_url TEXT,
+    is_published BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (merged_audio_file_id) REFERENCES merged_audio_files(id)
+);
+
+-- Podcastシリーズ設定テーブル（新規追加）
+CREATE TABLE podcast_settings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL DEFAULT 'Yuhei Nakasakaのはてなブックマークラジオ',
+    description TEXT DEFAULT 'はてなブックマークの記事を要約して音声化したポッドキャスト',
+    author TEXT DEFAULT 'Yuhei Nakasaka',
+    email TEXT,
+    language TEXT DEFAULT 'ja',
+    category TEXT DEFAULT 'Technology',
+    explicit BOOLEAN DEFAULT FALSE,
+    image_url TEXT,
+    website_url TEXT,
+    feed_url TEXT,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 ```
 
 ## 5. 技術スタックと依存関係
@@ -165,6 +214,8 @@ CREATE TABLE merged_audio_files (
 - **ランタイム**: Node.js 18.x以上
 - **パッケージマネージャ**: npm/yarn
 - **データベース**: SQLite3
+- **クラウドストレージ**: Cloudflare R2
+- **ホスティング**: Cloudflare Pages
 
 ### 5.2 主要ライブラリ
 
@@ -203,6 +254,15 @@ CREATE TABLE merged_audio_files (
   - `chalk`: ターミナル出力の色付け
   - `ora`: ローディングスピナー
 
+- **Podcast配信（新規追加）**
+  - `@aws-sdk/client-s3`: Cloudflare R2（S3互換API）クライアント
+  - `@aws-sdk/lib-storage`: S3アップロード用ユーティリティ
+  - `podcast`: RSSフィード生成
+  - `next`: Webサイト生成フレームワーク
+  - `react`: UIコンポーネント
+  - `react-dom`: DOMレンダリング
+  - `wrangler`: Cloudflare Pages CLI
+
 ### 5.3 音声合成オプション比較
 
 | サービス | 品質 | コスト | 特徴 |
@@ -231,14 +291,26 @@ hatebu-audio/
 │   │   ├── narration/           # ナレーション生成
 │   │   ├── tts/                 # 音声合成
 │   │   ├── audio-merge/         # 音声ファイル結合
+│   │   ├── podcast/             # Podcast配信（新規追加）
+│   │   │   ├── upload.ts        # 音声ファイルアップロード
+│   │   │   ├── feed.ts          # RSSフィード生成
+│   │   │   ├── metadata.ts      # メタデータ管理
+│   │   │   └── deploy.ts        # デプロイ機能
 │   │   └── database/            # データベース操作
 │   ├── utils/                   # ユーティリティ関数
-│   └── models/                  # データモデル
-├── data/                        # データディレクトリ
+│   ├── models/                  # データモデル
+│   └── website/                 # Webサイト関連（新規追加）
+│       ├── pages/               # Next.jsページ
+│       ├── components/          # コンポーネント
+│       ├── styles/              # スタイル
+│       └── public/              # 静的ファイル
+├── data/
 │   ├── db/                      # SQLiteデータベース
-│   └── audio/                   # 生成された音声ファイル
+│   ├── audio/                   # 生成された音声ファイル
+│   └── podcast/                 # Podcastメタデータ（新規追加）
 ├── tests/                       # テストコード
 ├── dist/                        # コンパイル済みJavaScript
+│   └── website/                 # ビルド済みWebサイト（新規追加）
 ├── .env.example                 # 環境変数サンプル
 ├── .gitignore                   # Git除外ファイル
 ├── package.json                 # npm設定
@@ -272,7 +344,31 @@ hatebu-audio/
 5. 音声品質の最適化
 6. ログ機能の強化
 
-### 7.3 フェーズ3: 改良と最適化
+### 7.3 フェーズ3: Podcast配信機能実装（新規追加）
+
+1. データベーススキーマの拡張
+   - Podcastエピソードテーブルの追加
+   - Podcastシリーズ設定テーブルの追加
+2. Cloudflare R2連携機能の実装
+   - 音声ファイルアップロード機能
+   - ストレージURL管理
+3. エピソードメタデータ自動生成機能の実装
+   - タイトルと説明の自動生成
+   - ブックマーク情報の活用
+4. RSSフィード生成機能の実装
+   - Podcast互換フォーマット
+   - iTunes固有タグのサポート
+5. Webサイト実装
+   - Next.jsプロジェクト設定
+   - エピソード一覧・詳細ページ
+   - 音声プレイヤー
+   - レスポンシブデザイン
+6. デプロイ機能の実装
+   - Cloudflare Pages CLIの設定
+   - デプロイスクリプト
+   - 自動化ワークフロー
+
+### 7.4 フェーズ4: 改良と最適化
 
 1. ユーザーフィードバックに基づく改善
 2. パフォーマンス最適化
@@ -293,6 +389,20 @@ hatebu-audio/
 [要約内容]
 ```
 
+### 8.2 エピソードメタデータ生成API（新規追加）
+
+エピソードのタイトルと説明を自動生成するためのプロンプトを以下に示します：
+
+```
+以下のブックマーク情報から、Podcastエピソードのタイトルと説明文を生成してください。
+タイトルは簡潔で魅力的なものにし、説明文はエピソードの内容を要約したものにしてください。
+
+タイトル形式: 「Yuhei Nakasakaのはてなブックマークラジオ #[エピソード番号]: [タイトル]」
+
+ブックマーク情報:
+[ブックマークのタイトルと説明のリスト]
+```
+
 ## 9. 設定と環境変数
 
 アプリケーションは以下の環境変数を使用します：
@@ -310,6 +420,16 @@ DB_PATH=./data/db/hatebu-audio.db
 AUDIO_OUTPUT_DIR=./data/audio
 MAX_BOOKMARKS_TO_PROCESS=10
 LOG_LEVEL=info
+
+# Cloudflare Settings (for Podcast) - 新規追加
+CLOUDFLARE_ACCOUNT_ID=your_cloudflare_account_id
+CLOUDFLARE_ACCESS_KEY_ID=your_cloudflare_access_key_id
+CLOUDFLARE_SECRET_ACCESS_KEY=your_cloudflare_secret_access_key
+CLOUDFLARE_R2_BUCKET=your_r2_bucket_name
+CLOUDFLARE_R2_PUBLIC_URL=https://your-public-bucket-url.example.com
+CLOUDFLARE_PAGES_PROJECT=your_pages_project_name
+PODCAST_WEBSITE_URL=https://your-podcast-website.pages.dev
+PODCAST_FEED_URL=https://your-podcast-website.pages.dev/feed.xml
 ```
 
 ## 10. 課題と対策
@@ -329,6 +449,12 @@ LOG_LEVEL=info
 5. **パフォーマンス**
    - 対策: 並列処理の実装、処理の最適化
 
+6. **ストレージコスト（新規追加）**
+   - 対策: 古いエピソードのアーカイブ機能、ファイル圧縮の最適化
+
+7. **デプロイの信頼性（新規追加）**
+   - 対策: エラーハンドリングの強化、デプロイ前の検証
+
 ## 11. 拡張可能性
 
 1. 複数の話者による対話形式への拡張
@@ -336,10 +462,18 @@ LOG_LEVEL=info
 3. 記事のカテゴリ分類と専用プレイリスト生成
 4. 定期的な自動実行機能
 5. 簡易なGUIインターフェースの追加
+6. **Podcast分析機能の追加（新規追加）**
+7. **ソーシャルメディア連携機能（新規追加）**
+8. **リスナーからのフィードバック収集機能（新規追加）**
 
 ## 12. 次のステップ
 
-1. プロジェクト初期化とライブラリインストール
-2. データベーススキーマの作成
-3. はてなブックマークRSS取得機能の実装
-4. 基本的なCLIインターフェースの実装
+1. Podcast配信機能の実装
+   - データベーススキーマの拡張
+   - Cloudflare R2連携機能の実装
+   - エピソードメタデータ自動生成機能の実装
+   - RSSフィード生成機能の実装
+   - Webサイト実装
+   - デプロイ機能の実装
+2. ユーザーフィードバックに基づく改善
+3. 自動化ワークフローの構築

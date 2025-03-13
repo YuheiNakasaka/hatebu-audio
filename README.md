@@ -1,6 +1,6 @@
 # はてなブックマーク音声化システム
 
-このシステムは、ユーザーのはてなブックマークから記事やPDFを取得し、内容を要約して1人のナレーターによる解説形式の音声ファイル（MP3）を生成するTypeScriptアプリケーションです。
+このシステムは、ユーザーのはてなブックマークから記事やPDFを取得し、内容を要約して1人のナレーターによる解説形式の音声ファイル（MP3）を生成するTypeScriptアプリケーションです。また、生成された音声ファイルをPodcastとして配信する機能も備えています。
 
 ## 機能
 
@@ -13,6 +13,9 @@
 - プレイリスト管理
 - 複数の音声ファイルを一つのMP3ファイルに結合（音声ファイル間に2.5秒の無音を挿入）
 - ラジオ風の挨拶と結びを自動的に追加（process-allコマンド実行時）
+- **音声ファイルをCloudflare R2にアップロードしてPodcastとして配信**
+- **Podcast用のRSSフィードを自動生成**
+- **過去の配信を一覧表示するWebサイトの自動生成とデプロイ**
 
 ## 必要条件
 
@@ -21,6 +24,7 @@
 - OpenAI APIキー
 - Google Cloud TTSの認証情報
 - はてなブックマークのアカウント
+- **Cloudflareアカウント（R2ストレージとPagesを使用）**
 
 ## セットアップ
 
@@ -53,6 +57,16 @@ DB_PATH=./data/db/hatebu-audio.db
 AUDIO_OUTPUT_DIR=./data/audio
 MAX_BOOKMARKS_TO_PROCESS=10
 LOG_LEVEL=info
+
+# Cloudflare Settings (for Podcast)
+CLOUDFLARE_ACCOUNT_ID=your_cloudflare_account_id
+CLOUDFLARE_ACCESS_KEY_ID=your_cloudflare_access_key_id
+CLOUDFLARE_SECRET_ACCESS_KEY=your_cloudflare_secret_access_key
+CLOUDFLARE_R2_BUCKET=your_r2_bucket_name
+CLOUDFLARE_R2_PUBLIC_URL=https://your-public-bucket-url.example.com
+CLOUDFLARE_PAGES_PROJECT=your_pages_project_name
+PODCAST_WEBSITE_URL=https://your-podcast-website.pages.dev
+PODCAST_FEED_URL=https://your-podcast-website.pages.dev/feed.xml
 ```
 
 5. データベースを初期化します。
@@ -60,6 +74,13 @@ LOG_LEVEL=info
 ```bash
 npm run db:init
 ```
+
+6. Cloudflareの設定を行います。
+
+   a. Cloudflareダッシュボードで、R2バケットを作成します。
+   b. R2バケットの公開アクセスを設定します。
+   c. Cloudflare Pagesプロジェクトを作成します。
+   d. APIトークンを生成し、アクセスキーとシークレットキーを取得します。
 
 ## 使用方法
 
@@ -84,7 +105,7 @@ npm start
 npm run dev
 ```
 
-### 個別のコマンド
+### 音声生成コマンド
 
 ```bash
 # はてなブックマークからブックマーク情報を取得して保存
@@ -115,6 +136,31 @@ npm run dev -- process-all
 npm run dev -- help
 ```
 
+### Podcast配信コマンド
+
+```bash
+# 音声ファイルをアップロードしてPodcastエピソードとして公開（メタデータ自動生成）
+npm run dev -- publish-episode --file-id=1 --auto-metadata
+
+# メタデータを手動で指定する場合
+npm run dev -- publish-episode --file-id=1 --title="エピソードタイトル" --description="説明文"
+
+# Podcastの設定を更新
+npm run dev -- update-podcast-settings
+
+# RSSフィードを生成
+npm run dev -- generate-feed
+
+# Webサイトをビルド
+npm run dev -- build-website
+
+# Webサイトをデプロイ
+npm run dev -- deploy-website
+
+# 全てのPodcast関連処理を実行（アップロード、メタデータ自動生成、フィード生成、Webサイトビルド、デプロイ）
+npm run dev -- publish-podcast --file-id=1
+```
+
 ### オプション
 
 各コマンドには以下のオプションを指定できます。
@@ -139,17 +185,41 @@ process-allコマンドを実行すると、結合された音声ファイルの
 - radio_intro.mp3: 開始時の挨拶
 - radio_outro.mp3: 終了時の結び
 
-```bash
-# はてなユーザー名を指定（環境変数より優先）
-npm run dev -- fetch-bookmarks --username=your_hatena_username
+## Podcast配信の設定
 
-# 処理する最大件数を指定
-npm run dev -- fetch-bookmarks --limit=10
+### Cloudflare R2の設定
+
+1. Cloudflareダッシュボードにログインします。
+2. R2を選択し、新しいバケットを作成します。
+3. バケット名を設定します（例：`hatebu-audio-podcast`）。
+4. 「公開アクセス」を有効にします。
+5. 「APIトークン」から新しいAPIトークンを生成し、アクセスキーとシークレットキーを取得します。
+
+### Cloudflare Pagesの設定
+
+1. Cloudflareダッシュボードで「Pages」を選択します。
+2. 「プロジェクトを作成」をクリックします。
+3. プロジェクト名を設定します（例：`hatebu-audio-podcast`）。
+4. デプロイ方法として「Direct Upload」を選択します。
+
+### 環境変数の設定
+
+`.env`ファイルに以下の環境変数を追加します：
+
+```
+CLOUDFLARE_ACCOUNT_ID=your_cloudflare_account_id
+CLOUDFLARE_ACCESS_KEY_ID=your_cloudflare_access_key_id
+CLOUDFLARE_SECRET_ACCESS_KEY=your_cloudflare_secret_access_key
+CLOUDFLARE_R2_BUCKET=your_r2_bucket_name
+CLOUDFLARE_R2_PUBLIC_URL=https://your-public-bucket-url.example.com
+CLOUDFLARE_PAGES_PROJECT=your_pages_project_name
+PODCAST_WEBSITE_URL=https://your-podcast-website.pages.dev
+PODCAST_FEED_URL=https://your-podcast-website.pages.dev/feed.xml
 ```
 
 ## 動作確認手順
 
-以下の手順で、はてなブックマークから記事を取得し、音声ファイルを生成するまでの一連の流れを確認できます。
+### 音声ファイル生成
 
 1. 環境変数を設定します。
 
@@ -186,6 +256,25 @@ npm run dev -- process-all --username=your_hatena_username --limit=5
 ls -la ./data/audio
 ```
 
+### Podcast配信
+
+1. 音声ファイルをPodcastエピソードとして公開します。
+
+```bash
+# 音声ファイルをアップロードしてPodcastエピソードとして公開
+npm run dev -- publish-podcast --file-id=1
+```
+
+2. 生成されたWebサイトとRSSフィードを確認します。
+
+```bash
+# WebサイトURL
+echo $PODCAST_WEBSITE_URL
+
+# フィードURL
+echo $PODCAST_FEED_URL
+```
+
 ## トラブルシューティング
 
 ### OpenAI APIキーの設定
@@ -204,3 +293,12 @@ Google Cloud TTSの認証情報が正しく設定されていない場合、音�
 ### はてなユーザー名の設定
 
 はてなユーザー名が正しく設定されていない場合、ブックマーク情報の取得に失敗します。はてなブックマークのユーザー名は、はてなブックマークのURLから確認できます（例：`https://b.hatena.ne.jp/username/`）。
+
+### Cloudflare設定の問題
+
+Cloudflareの設定に問題がある場合、以下を確認してください：
+
+1. アカウントIDとAPIトークンが正しく設定されているか
+2. R2バケットが正しく作成され、公開アクセスが有効になっているか
+3. Pagesプロジェクトが正しく設定されているか
+4. ネットワーク接続に問題がないか
