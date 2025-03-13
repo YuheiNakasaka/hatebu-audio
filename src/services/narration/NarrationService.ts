@@ -1,6 +1,6 @@
 import { Narration, ProcessResult, ProcessStatus } from "../../types";
 import { NarrationModel, ContentModel, BookmarkModel } from "../../models";
-import { Configuration, OpenAIApi } from "openai";
+import OpenAI from "openai";
 import dotenv from "dotenv";
 
 // 環境変数の読み込み
@@ -40,7 +40,7 @@ export class OpenAINarrationService implements NarrationService {
   private narrationModel: NarrationModel;
   private contentModel: ContentModel;
   private bookmarkModel: BookmarkModel;
-  private openai: OpenAIApi;
+  private openai: OpenAI;
 
   /**
    * コンストラクタ
@@ -51,10 +51,9 @@ export class OpenAINarrationService implements NarrationService {
     this.bookmarkModel = new BookmarkModel();
 
     // OpenAI APIの設定
-    const configuration = new Configuration({
+    this.openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     });
-    this.openai = new OpenAIApi(configuration);
   }
 
   /**
@@ -70,7 +69,7 @@ export class OpenAINarrationService implements NarrationService {
 
     try {
       // OpenAI APIを使用してナレーションを生成
-      const response = await this.openai.createChatCompletion({
+      const response = await this.openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
           {
@@ -97,7 +96,7 @@ export class OpenAINarrationService implements NarrationService {
       });
 
       // 応答からナレーションテキストを取得
-      const narrationText = response.data.choices[0]?.message?.content?.trim() || "";
+      const narrationText = response.choices[0]?.message?.content?.trim() || "";
       
       if (!narrationText) {
         throw new Error("ナレーションの生成に失敗しました。APIからの応答が空です。");

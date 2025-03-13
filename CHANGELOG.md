@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- OpenAI APIのバージョンアップ（v4）に対応
+  - NarrationServiceのOpenAI API呼び出し部分を修正
+  - 古いConfiguration, OpenAIApiクラスの使用から新しいOpenAIクラスの使用に変更
+  - createChatCompletionメソッドからchat.completions.createメソッドへの変更
+  - レスポンス構造の変更に対応
+
 ### Added
 
 - Podcast配信用Webサイトの実装
