@@ -27,6 +27,23 @@ export interface AudioMergeService {
   mergeAudioFiles(inputFiles: string[], outputFile: string, silenceDuration?: number): Promise<string>;
 
   /**
+   * 音声ファイルを結合（挨拶と結びを追加）
+   * @param inputFiles 入力ファイルパスの配列
+   * @param outputFile 出力ファイルパス
+   * @param introFile 挨拶音声ファイルパス
+   * @param outroFile 結び音声ファイルパス
+   * @param silenceDuration ファイル間の無音の長さ（秒）
+   * @returns 結合した音声ファイルのパス
+   */
+  mergeAudioFilesWithIntro(
+    inputFiles: string[], 
+    outputFile: string,
+    introFile: string,
+    outroFile: string, 
+    silenceDuration?: number
+  ): Promise<string>;
+
+  /**
    * 指定した音声ファイルIDの配列から結合音声ファイルを生成して保存
    * @param audioFileIds 音声ファイルIDの配列
    * @param name 結合音声ファイル名
@@ -48,6 +65,13 @@ export interface AudioMergeService {
    * @returns 処理結果
    */
   mergeUnprocessedAudioFiles(name?: string): Promise<ProcessResult<MergedAudioFile>>;
+
+  /**
+   * 未処理の音声ファイルを結合（挨拶と結びを追加）
+   * @param name 結合音声ファイル名（指定しない場合は自動生成）
+   * @returns 処理結果
+   */
+  mergeUnprocessedAudioFilesWithIntro(name?: string): Promise<ProcessResult<MergedAudioFile>>;
 }
 
 /**
@@ -71,6 +95,125 @@ export class DefaultAudioMergeService implements AudioMergeService {
     // 音声出力ディレクトリの確認と作成
     if (!fs.existsSync(this.audioOutputDir)) {
       fs.mkdirSync(this.audioOutputDir, { recursive: true });
+    }
+  }
+
+  /**
+   * 音声ファイルを結合（挨拶と結びを追加）
+   * @param inputFiles 入力ファイルパスの配列
+   * @param outputFile 出力ファイルパス
+   * @param introFile 挨拶音声ファイルパス
+   * @param outroFile 結び音声ファイルパス
+   * @param silenceDuration ファイル間の無音の長さ（秒）
+   * @returns 結合した音声ファイルのパス
+   */
+  async mergeAudioFilesWithIntro(
+    inputFiles: string[], 
+    outputFile: string,
+    introFile: string,
+    outroFile: string, 
+    silenceDuration: number = 2.5
+  ): Promise<string> {
+    // 挨拶ファイルと結びファイルを含めた配列を作成
+    const allFiles = [introFile, ...inputFiles, outroFile];
+    
+    // 既存のmergeAudioFilesメソッドを使用して結合
+    return this.mergeAudioFiles(allFiles, outputFile, silenceDuration);
+  }
+
+  /**
+   * 未処理の音声ファイルを結合（挨拶と結びを追加）
+   * @param name 結合音声ファイル名（指定しない場合は自動生成）
+   * @returns 処理結果
+   */
+  async mergeUnprocessedAudioFilesWithIntro(name?: string): Promise<ProcessResult<MergedAudioFile>> {
+    try {
+      // 挨拶と結びの音声ファイルパス
+      const introFilePath = path.join(this.audioOutputDir, "radio_intro.mp3");
+      const outroFilePath = path.join(this.audioOutputDir, "radio_outro.mp3");
+      
+      // 挨拶と結びの音声ファイルが存在するか確認
+      if (!fs.existsSync(introFilePath) || !fs.existsSync(outroFilePath)) {
+        return {
+          status: ProcessStatus.ERROR,
+          message: "挨拶または結びの音声ファイルが見つかりません。",
+        };
+      }
+
+      // 既存の結合音声ファイル情報を取得
+      const mergedAudioFiles = await this.mergedAudioFileModel.findAll(1000, 0);
+      
+      // 既に結合済みの音声ファイルIDのセットを作成
+      const mergedAudioFileIds = new Set<number>();
+      mergedAudioFiles.forEach(mergedFile => {
+        if (Array.isArray(mergedFile.source_files)) {
+          mergedFile.source_files.forEach(id => mergedAudioFileIds.add(id));
+        }
+      });
+      
+      // 全ての音声ファイルを取得
+      const allAudioFiles = await this.audioFileModel.findAll(1000, 0);
+      
+      // 未処理の音声ファイルIDを抽出
+      const unprocessedAudioFileIds = allAudioFiles
+        .filter(file => file.id !== undefined && !mergedAudioFileIds.has(file.id))
+        .map(file => file.id as number);
+      
+      if (unprocessedAudioFileIds.length === 0) {
+        return {
+          status: ProcessStatus.SKIPPED,
+          message: "未処理の音声ファイルが見つかりませんでした。",
+        };
+      }
+      
+      // 音声ファイル情報の取得
+      const audioFiles: AudioFile[] = [];
+      for (const id of unprocessedAudioFileIds) {
+        const audioFile = await this.audioFileModel.findById(id);
+        if (!audioFile) {
+          return {
+            status: ProcessStatus.ERROR,
+            message: `音声ファイルが見つかりません: ID ${id}`,
+          };
+        }
+        audioFiles.push(audioFile);
+      }
+
+      // 入力ファイルパスの配列を作成
+      const inputFiles = audioFiles.map(file => file.file_path);
+
+      // 出力ファイル名の生成
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+      const fileName = `${(name || `自動生成_${new Date().toISOString().slice(0, 10)}`).replace(/[^\w\s-]/g, "_")}_${timestamp}.mp3`;
+      const outputPath = path.join(this.audioOutputDir, fileName);
+
+      // 音声ファイルの結合（挨拶と結びを追加）
+      await this.mergeAudioFilesWithIntro(inputFiles, outputPath, introFilePath, outroFilePath);
+
+      // 結合音声ファイル情報の保存
+      const mergedAudioFile: MergedAudioFile = {
+        name: name || `自動生成_${new Date().toISOString().slice(0, 10)}`,
+        file_path: outputPath,
+        source_files: unprocessedAudioFileIds,
+      };
+
+      const mergedAudioFileId = await this.mergedAudioFileModel.create(mergedAudioFile);
+      mergedAudioFile.id = mergedAudioFileId;
+
+      return {
+        status: ProcessStatus.SUCCESS,
+        message: `音声ファイルを結合して保存しました（挨拶と結びを追加）: ${mergedAudioFile.name}`,
+        data: mergedAudioFile,
+      };
+    } catch (error) {
+      if (error instanceof Error) {
+        return {
+          status: ProcessStatus.ERROR,
+          message: `未処理の音声ファイルの結合に失敗しました: ${error.message}`,
+          error: error,
+        };
+      }
+      throw error;
     }
   }
 

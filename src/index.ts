@@ -3,6 +3,8 @@ import { Command } from "commander";
 import inquirer from "inquirer";
 import chalk from "chalk";
 import ora from "ora";
+import fs from "fs";
+import path from "path";
 import { HatenaBookmarkService } from "./services/bookmark";
 import { WebContentService } from "./services/content";
 import { OpenAINarrationService } from "./services/narration";
@@ -385,12 +387,29 @@ program
       return;
     }
     
-    // 音声ファイル結合
-    console.log(chalk.blue("\n6. 未処理の音声ファイルの結合"));
+    // 音声ファイル結合（挨拶と結びを追加）
+    console.log(chalk.blue("\n6. 未処理の音声ファイルの結合（挨拶と結びを追加）"));
     const spinner6 = ora("未処理の音声ファイルを結合中...").start();
     
     try {
-      const result6 = await audioMergeService.mergeUnprocessedAudioFiles(
+      // 挨拶と結びの音声ファイルを生成（初回のみ）
+      const audioOutputDir = process.env.AUDIO_OUTPUT_DIR || "./data/audio";
+      const introFilePath = path.join(audioOutputDir, "radio_intro.mp3");
+      const outroFilePath = path.join(audioOutputDir, "radio_outro.mp3");
+      
+      // ファイルが存在しない場合のみ生成
+      if (!fs.existsSync(introFilePath)) {
+        const introText = "こんにちは、はてなブックマークラジオへようこそ。今回のブックマークをご紹介します。";
+        await ttsService.synthesizeSpeech(introText, introFilePath);
+      }
+      
+      if (!fs.existsSync(outroFilePath)) {
+        const outroText = "以上で今回のはてなブックマークラジオを終わります。お聴きいただきありがとうございました。";
+        await ttsService.synthesizeSpeech(outroText, outroFilePath);
+      }
+      
+      // 新しいメソッドを使用して音声ファイルを結合
+      const result6 = await audioMergeService.mergeUnprocessedAudioFilesWithIntro(
         `自動生成_${new Date().toISOString().slice(0, 10)}`
       );
       
