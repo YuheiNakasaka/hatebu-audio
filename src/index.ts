@@ -468,7 +468,7 @@ program
         {
           title: options.title,
           description: options.description,
-          autoMetadata: options.autoMetadata,
+          autoMetadata: true,
         }
       );
       
@@ -592,7 +592,7 @@ program
         {
           title: options.title,
           description: options.description,
-          autoMetadata: options.autoMetadata,
+          autoMetadata: true,
         }
       );
       

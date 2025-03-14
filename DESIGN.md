@@ -147,23 +147,6 @@ CREATE TABLE audio_files (
     FOREIGN KEY (bookmark_id) REFERENCES bookmarks(id)
 );
 
--- プレイリストテーブル
-CREATE TABLE playlists (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- プレイリスト項目テーブル
-CREATE TABLE playlist_items (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    playlist_id INTEGER NOT NULL,
-    audio_file_id INTEGER NOT NULL,
-    position INTEGER NOT NULL,
-    FOREIGN KEY (playlist_id) REFERENCES playlists(id),
-    FOREIGN KEY (audio_file_id) REFERENCES audio_files(id)
-);
-
 -- 結合音声ファイルテーブル
 CREATE TABLE merged_audio_files (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

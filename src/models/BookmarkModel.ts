@@ -118,7 +118,7 @@ export class BookmarkModel {
       SELECT 
         a.*, b.*,
         a.id as audio_file_id, b.id as bookmark_id,
-        a.created_at as audio_file_created_at, b.created_at as bookmark_created_at
+        a.generated_at as audio_file_created_at, b.created_at as bookmark_created_at
       FROM 
         audio_files a
       JOIN 

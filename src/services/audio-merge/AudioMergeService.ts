@@ -1,5 +1,5 @@
 import { MergedAudioFile, AudioFile, ProcessResult, ProcessStatus } from "../../types";
-import { MergedAudioFileModel, AudioFileModel, PlaylistModel } from "../../models";
+import { MergedAudioFileModel, AudioFileModel } from "../../models";
 import ffmpeg from "fluent-ffmpeg";
 import fs from "fs";
 import path from "path";
@@ -52,14 +52,6 @@ export interface AudioMergeService {
   mergeAndSaveAudioFiles(audioFileIds: number[], name: string): Promise<ProcessResult<MergedAudioFile>>;
 
   /**
-   * プレイリストから結合音声ファイルを生成して保存
-   * @param playlistId プレイリストID
-   * @param name 結合音声ファイル名（指定しない場合はプレイリスト名を使用）
-   * @returns 処理結果
-   */
-  mergePlaylist(playlistId: number, name?: string): Promise<ProcessResult<MergedAudioFile>>;
-
-  /**
    * 未処理の音声ファイル（まだマージされていない音声ファイル）を自動でマージする
    * @param name 結合音声ファイル名（指定しない場合は自動生成）
    * @returns 処理結果
@@ -80,7 +72,6 @@ export interface AudioMergeService {
 export class DefaultAudioMergeService implements AudioMergeService {
   private mergedAudioFileModel: MergedAudioFileModel;
   private audioFileModel: AudioFileModel;
-  private playlistModel: PlaylistModel;
   private audioOutputDir: string;
 
   /**
@@ -89,7 +80,6 @@ export class DefaultAudioMergeService implements AudioMergeService {
   constructor() {
     this.mergedAudioFileModel = new MergedAudioFileModel();
     this.audioFileModel = new AudioFileModel();
-    this.playlistModel = new PlaylistModel();
     this.audioOutputDir = process.env.AUDIO_OUTPUT_DIR || "./data/audio";
 
     // 音声出力ディレクトリの確認と作成
@@ -346,49 +336,6 @@ export class DefaultAudioMergeService implements AudioMergeService {
         return {
           status: ProcessStatus.ERROR,
           message: `音声ファイルの結合と保存に失敗しました: ${error.message}`,
-          error: error,
-        };
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * プレイリストから結合音声ファイルを生成して保存
-   * @param playlistId プレイリストID
-   * @param name 結合音声ファイル名（指定しない場合はプレイリスト名を使用）
-   * @returns 処理結果
-   */
-  async mergePlaylist(playlistId: number, name?: string): Promise<ProcessResult<MergedAudioFile>> {
-    try {
-      // プレイリストの存在確認
-      const playlist = await this.playlistModel.findById(playlistId);
-      if (!playlist) {
-        return {
-          status: ProcessStatus.ERROR,
-          message: `プレイリストが見つかりません: ID ${playlistId}`,
-        };
-      }
-
-      // プレイリスト内の音声ファイルIDを取得
-      const audioFileIds = await this.playlistModel.getAudioFileIds(playlistId);
-      if (audioFileIds.length === 0) {
-        return {
-          status: ProcessStatus.SKIPPED,
-          message: `プレイリストに音声ファイルが含まれていません: ${playlist.name}`,
-        };
-      }
-
-      // 結合音声ファイル名の設定
-      const mergedName = name || `プレイリスト_${playlist.name}`;
-
-      // 音声ファイルの結合
-      return this.mergeAndSaveAudioFiles(audioFileIds, mergedName);
-    } catch (error) {
-      if (error instanceof Error) {
-        return {
-          status: ProcessStatus.ERROR,
-          message: `プレイリストの音声ファイル結合に失敗しました: ${error.message}`,
           error: error,
         };
       }
