@@ -92,8 +92,8 @@ export class GoogleCloudTTSService implements TTSService {
           input: { text: chunk },
           voice: {
             languageCode: "ja-JP",
-            name: "ja-JP-Neural2-B", // 女性声
-            ssmlGender: "FEMALE",
+            name: "ja-JP-Chirp3-HD-Charon", // 男性声
+            ssmlGender: "MALE",
           },
           audioConfig: {
             audioEncoding: "MP3",
