@@ -1,4 +1,4 @@
-import { AudioFile, Narration, ProcessResult, ProcessStatus } from "../../types";
+import { AudioFile, ProcessResult, ProcessStatus } from "../../types";
 import { AudioFileModel, NarrationModel, BookmarkModel } from "../../models";
 import { TextToSpeechClient } from "@google-cloud/text-to-speech";
 import fs from "fs";

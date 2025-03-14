@@ -13,9 +13,6 @@ export * from "./narration";
 // 音声合成サービス
 export * from "./tts";
 
-// プレイリスト管理サービス
-export * from "./playlist";
-
 // 音声ファイル結合サービス
 export * from "./audio-merge";
 

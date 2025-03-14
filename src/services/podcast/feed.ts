@@ -2,7 +2,7 @@ import { Podcast } from "podcast";
 import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
-import { ProcessResult, ProcessStatus, PodcastEpisode, PodcastSettings } from "../../types";
+import { ProcessResult, ProcessStatus } from "../../types";
 import { PodcastEpisodeModel, PodcastSettingsModel } from "../../models";
 
 // 環境変数の読み込み

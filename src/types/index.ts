@@ -45,28 +45,6 @@ export interface AudioFile {
 }
 
 /**
- * プレイリストの型定義
- */
-export interface Playlist {
-  id?: number;
-  name: string;
-  description?: string;
-  created_at?: Date;
-}
-
-/**
- * プレイリスト項目の型定義
- */
-export interface PlaylistItem {
-  id?: number;
-  playlist_id: number;
-  audio_file_id: number;
-  position: number;
-  audio_file?: AudioFile;
-  bookmark?: Bookmark;
-}
-
-/**
  * はてなブックマークのRSSアイテムの型定義
  */
 export interface HatenaBookmarkItem {

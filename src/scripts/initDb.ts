@@ -77,27 +77,6 @@ const db = new sqlite3.Database(dbPath, (err) => {
       );
     `);
 
-    // プレイリストテーブル
-    db.run(`
-      CREATE TABLE IF NOT EXISTS playlists (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-
-    // プレイリスト項目テーブル
-    db.run(`
-      CREATE TABLE IF NOT EXISTS playlist_items (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        playlist_id INTEGER NOT NULL,
-        audio_file_id INTEGER NOT NULL,
-        position INTEGER NOT NULL,
-        FOREIGN KEY (playlist_id) REFERENCES playlists(id),
-        FOREIGN KEY (audio_file_id) REFERENCES audio_files(id)
-      );
-    `);
-
     // 結合音声ファイルテーブル
     db.run(`
       CREATE TABLE IF NOT EXISTS merged_audio_files (

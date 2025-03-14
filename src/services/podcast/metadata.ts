@@ -1,9 +1,8 @@
 import { OpenAI } from "openai";
 import dotenv from "dotenv";
-import { ProcessResult, ProcessStatus, Bookmark, MergedAudioFile, PodcastEpisode } from "../../types";
+import { ProcessResult, ProcessStatus, Bookmark, PodcastEpisode } from "../../types";
 import { BookmarkModel, MergedAudioFileModel, PodcastEpisodeModel } from "../../models";
 import fs from "fs";
-import path from "path";
 import { getAudioDurationInSeconds } from "get-audio-duration";
 
 // 環境変数の読み込み

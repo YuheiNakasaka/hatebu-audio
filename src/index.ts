@@ -161,40 +161,6 @@ program
     }
   });
 
-// プレイリストから音声ファイルを結合するコマンド
-program
-  .command("merge-playlist")
-  .description("プレイリストの音声ファイルを一つのMP3ファイルに結合")
-  .requiredOption("-p, --playlist-id <id>", "プレイリストID")
-  .option("-n, --name <name>", "結合後のファイル名（指定しない場合はプレイリスト名を使用）")
-  .action(async (options) => {
-    const spinner = ora("音声ファイルを結合中...").start();
-    
-    try {
-      const result = await audioMergeService.mergePlaylist(
-        parseInt(options.playlistId),
-        options.name
-      );
-      
-      spinner.stop();
-      
-      if (result.status === ProcessStatus.SUCCESS) {
-        console.log(chalk.green(`✓ ${result.message}`));
-        if (result.data) {
-          console.log(chalk.gray(`  結合された音声ファイル: ${result.data.name}`));
-          console.log(chalk.gray(`  ファイルパス: ${result.data.file_path}`));
-        }
-      } else if (result.status === ProcessStatus.SKIPPED) {
-        console.log(chalk.yellow(`⚠ ${result.message}`));
-      } else {
-        console.log(chalk.red(`✗ ${result.message}`));
-      }
-    } catch (error) {
-      spinner.stop();
-      console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
-    }
-  });
-
 // 指定した音声ファイルを結合するコマンド
 program
   .command("merge-audio-files")
