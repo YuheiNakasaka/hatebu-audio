@@ -45,9 +45,7 @@ export const getStaticProps: GetStaticProps = async () => {
       props: {
         episodes: episodes || [],
         settings: settings || getDummyPodcastSettings(),
-      },
-      // 定期的に再ビルド
-      revalidate: 3600, // 1時間ごと
+      }
     };
   } catch (error) {
     console.error('Error fetching data:', error);
@@ -58,7 +56,6 @@ export const getStaticProps: GetStaticProps = async () => {
         episodes: getDummyEpisodes(),
         settings: getDummyPodcastSettings(),
       },
-      revalidate: 3600,
     };
   }
 };

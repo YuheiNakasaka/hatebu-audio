@@ -68,13 +68,13 @@ export const getStaticPaths: GetStaticPaths = async () => {
     const paths = await getAllEpisodeIds();
     return {
       paths,
-      fallback: 'blocking',
+      fallback: false,
     };
   } catch (error) {
     console.error('Error generating paths:', error);
     return {
       paths: [],
-      fallback: 'blocking',
+      fallback: false,
     };
   }
 };
@@ -95,8 +95,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
       props: {
         episode,
         settings: settings || getDummyPodcastSettings(),
-      },
-      revalidate: 3600, // 1時間ごとに再生成
+      }
     };
   } catch (error) {
     console.error('Error fetching episode:', error);

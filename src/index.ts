@@ -553,6 +553,32 @@ program
     }
   });
 
+// Webサイトビルドコマンド
+program
+  .command("build-website")
+  .description("PodcastのWebサイトをビルド")
+  .action(async () => {
+    const spinner = ora("Webサイトをビルド中...").start();
+    
+    try {
+      const result = await podcastService.buildWebsite();
+      
+      spinner.stop();
+      
+      if (result.status === ProcessStatus.SUCCESS) {
+        console.log(chalk.green(`✓ ${result.message}`));
+        if (result.data) {
+          console.log(chalk.gray(`  ビルド出力ディレクトリ: ${result.data}`));
+        }
+      } else {
+        console.log(chalk.red(`✗ ${result.message}`));
+      }
+    } catch (error) {
+      spinner.stop();
+      console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
+    }
+  });
+
 // Webサイトデプロイコマンド
 program
   .command("deploy-website")
@@ -648,25 +674,49 @@ program
       console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
     }
     
-    // Webサイトデプロイ
-    console.log(chalk.blue("\n3. Webサイトのデプロイ"));
-    const spinner3 = ora("Webサイトをデプロイ中...").start();
+    // Webサイトビルド
+    console.log(chalk.blue("\n3. Webサイトのビルド"));
+    const spinner3 = ora("Webサイトをビルド中...").start();
     
     try {
-      const result3 = await podcastService.deployWebsite();
+      const result3 = await podcastService.buildWebsite();
       
       spinner3.stop();
       
       if (result3.status === ProcessStatus.SUCCESS) {
         console.log(chalk.green(`✓ ${result3.message}`));
         if (result3.data) {
-          console.log(chalk.gray(`  WebサイトURL: ${result3.data}`));
+          console.log(chalk.gray(`  ビルド出力ディレクトリ: ${result3.data}`));
         }
       } else {
         console.log(chalk.red(`✗ ${result3.message}`));
+        return;
       }
     } catch (error) {
       spinner3.stop();
+      console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
+      return;
+    }
+    
+    // Webサイトデプロイ
+    console.log(chalk.blue("\n4. Webサイトのデプロイ"));
+    const spinner4 = ora("Webサイトをデプロイ中...").start();
+    
+    try {
+      const result4 = await podcastService.deployWebsite();
+      
+      spinner4.stop();
+      
+      if (result4.status === ProcessStatus.SUCCESS) {
+        console.log(chalk.green(`✓ ${result4.message}`));
+        if (result4.data) {
+          console.log(chalk.gray(`  WebサイトURL: ${result4.data}`));
+        }
+      } else {
+        console.log(chalk.red(`✗ ${result4.message}`));
+      }
+    } catch (error) {
+      spinner4.stop();
       console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
     }
   });

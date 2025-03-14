@@ -7,6 +7,7 @@ import { CloudflarePagesDeployService } from "./deploy";
 import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
+import { execSync } from "child_process";
 
 // 環境変数の読み込み
 dotenv.config();
@@ -252,6 +253,73 @@ export class PodcastService {
         return {
           status: ProcessStatus.ERROR,
           message: `RSSフィードの生成とデプロイに失敗しました: ${error.message}`,
+          error,
+        };
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Webサイトをビルド
+   * @returns 処理結果
+   */
+  async buildWebsite(): Promise<ProcessResult<string>> {
+    try {
+      const websiteDir = path.join(process.cwd(), "src", "website");
+      const outputDir = path.join(process.cwd(), "dist", "website");
+      
+      // 出力ディレクトリが存在しない場合は作成
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+      }
+      
+      // Next.jsのビルドコマンドを実行
+      const command = `cd ${websiteDir} && npx next build`;
+      execSync(command, { stdio: 'inherit' });
+      
+      // ビルド結果のoutディレクトリをdist/websiteディレクトリにコピー
+      const outDir = path.join(websiteDir, "out");
+      if (!fs.existsSync(outDir)) {
+        return {
+          status: ProcessStatus.ERROR,
+          message: "Webサイトのビルドに失敗しました。outディレクトリが見つかりません。",
+        };
+      }
+      
+      // dist/websiteディレクトリの中身を空にする
+      const files = fs.readdirSync(outputDir);
+      for (const file of files) {
+        const filePath = path.join(outputDir, file);
+        if (fs.lstatSync(filePath).isDirectory()) {
+          fs.rmSync(filePath, { recursive: true });
+        } else {
+          fs.unlinkSync(filePath);
+        }
+      }
+      
+      // outディレクトリの中身をdist/websiteディレクトリにコピー
+      const outFiles = fs.readdirSync(outDir);
+      for (const file of outFiles) {
+        const srcPath = path.join(outDir, file);
+        const destPath = path.join(outputDir, file);
+        if (fs.lstatSync(srcPath).isDirectory()) {
+          fs.cpSync(srcPath, destPath, { recursive: true });
+        } else {
+          fs.copyFileSync(srcPath, destPath);
+        }
+      }
+      
+      return {
+        status: ProcessStatus.SUCCESS,
+        message: "Webサイトのビルドに成功しました",
+        data: outputDir,
+      };
+    } catch (error) {
+      if (error instanceof Error) {
+        return {
+          status: ProcessStatus.ERROR,
+          message: `Webサイトのビルドに失敗しました: ${error.message}`,
           error,
         };
       }

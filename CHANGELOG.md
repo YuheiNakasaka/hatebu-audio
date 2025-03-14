@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Webサイトビルド失敗問題の修正
+  - Next.jsの静的エクスポート（output: 'export'）とISR（Incremental Static Regeneration）機能の互換性問題を解決
+  - ページコンポーネントから`revalidate`オプションを削除
+  - 動的ルーティングの`fallback: 'blocking'`設定を静的エクスポート互換の`fallback: false`に変更
+
+### Fixed
+
 - OpenAI APIのバージョンアップ（v4）に対応
   - NarrationServiceのOpenAI API呼び出し部分を修正
   - 古いConfiguration, OpenAIApiクラスの使用から新しいOpenAIクラスの使用に変更
