@@ -207,7 +207,7 @@ program
     const spinner = ora("未処理の音声ファイルを結合中...").start();
     
     try {
-      const result = await audioMergeService.mergeUnprocessedAudioFiles(options.name);
+      const result = await audioMergeService.mergeUnprocessedAudioFilesWithIntro(options.name);
       
       spinner.stop();
       
@@ -325,7 +325,6 @@ program
     // 音声ファイル生成
     console.log(chalk.blue("\n5. 音声ファイルの生成"));
     const spinner5 = ora("音声ファイルを生成中...").start();
-    let totalEpisodeCount = 0;
     try {
       const result5 = await ttsService.processUnprocessedNarrations(
         parseInt(options.limit)
@@ -336,7 +335,6 @@ program
       if (result5.status === ProcessStatus.SUCCESS) {
         console.log(chalk.green(`✓ ${result5.message}`));
         if (result5.data) {
-          totalEpisodeCount += result5.data.length;
           console.log(chalk.gray(`  生成された音声ファイル: ${result5.data.length}件`));
           console.log(chalk.gray(`  ファイルパス:`));
           result5.data.forEach((audioFile) => {
@@ -367,7 +365,7 @@ program
 
       // ファイルが存在しない場合のみ生成
       if (!fs.existsSync(introFilePath)) {
-        const introText = `はてなブックマークラジオへようこそ。今回もYuhei Nakasakaがブックマークした${totalEpisodeCount}件の記事をご紹介します。`;
+        const introText = `はてなブックマークラジオへようこそ。今回もYuhei Nakasakaがブックマークした記事をご紹介します。`;
         await ttsService.synthesizeSpeech(introText, introFilePath);
       }
       

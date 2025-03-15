@@ -146,10 +146,10 @@ export class PodcastMetadataService {
 
       // プロンプトの作成
       const prompt = `
-以下のブックマーク情報から、Podcastエピソードのタイトルと説明文を生成してください。
+以下のブックマーク情報から、Podcastエピソードのタイトルと説明文を日本語で生成してください。
 タイトルは簡潔で魅力的なものにし、説明文はエピソードの内容を要約したものにしてください。
 
-タイトル形式: 「Yuhei Nakasakaのはてなブックマークラジオ #${episodeNumber}: [タイトル]」
+タイトル形式: 「#${episodeNumber}: [タイトル]」
 
 ブックマーク情報:
 ${bookmarkInfo}
@@ -161,7 +161,7 @@ ${bookmarkInfo}
 
       // OpenAI APIを使用してタイトルと説明を生成
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4",
+        model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.7,
         max_tokens: 500,

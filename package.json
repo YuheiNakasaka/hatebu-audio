@@ -12,7 +12,9 @@
     "lint": "biome lint .",
     "format": "biome format --write .",
     "test": "jest",
-    "db:init": "ts-node src/scripts/initDb.ts"
+    "db:init": "ts-node src/scripts/initDb.ts",
+    "podcast:all": "ts-node src/scripts/runPodcastWorkflow.ts"
+
   },
   "keywords": [
     "hatena",

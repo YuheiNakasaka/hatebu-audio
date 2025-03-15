@@ -9,11 +9,11 @@ dotenv.config();
 const execPromise = promisify(exec);
 const dbPath = process.env.DB_PATH || "./data/db/hatebu-audio.db";
 
-async function getLatestPodcastEpisodeId(): Promise<number> {
+async function getLatestMergedAudioFileId(): Promise<number> {
   return new Promise((resolve, reject) => {
     const db = new sqlite3.Database(dbPath);
     db.get(
-      "SELECT id FROM podcast_episodes ORDER BY id DESC LIMIT 1",
+      "SELECT id FROM merged_audio_files ORDER BY id DESC LIMIT 1",
       (err, row: { id: number } | undefined) => {
         db.close();
         if (err) reject(err);
@@ -40,8 +40,8 @@ async function main() {
     // 1. process-allの実行
     await runCommand('npm run dev -- process-all --username=razokulover --limit=20');
 
-    // 2. 最新のpodcast_episodeのIDを取得
-    const latestId = await getLatestPodcastEpisodeId();
+    // 2. 最新のmerged_audio_fileのIDを取得
+    const latestId = await getLatestMergedAudioFileId();
     
     // 3. publish-podcastの実行
     await runCommand(`npm run dev -- publish-podcast --file-id=${latestId}`);

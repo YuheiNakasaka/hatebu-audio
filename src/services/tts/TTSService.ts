@@ -287,6 +287,8 @@ export class GoogleCloudTTSService implements TTSService {
       const errors: string[] = [];
 
       // 各ブックマークを処理
+      console.log(unprocessedBookmarkIds);
+      
       for (const bookmarkId of unprocessedBookmarkIds) {
         try {
           const result = await this.generateAndSaveAudioFile(bookmarkId);

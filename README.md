@@ -43,29 +43,7 @@ cp .env.example .env
 
 4. `.env`ファイルを編集して、以下の環境変数を設定します。
 
-```
-# API Keys
-OPENAI_API_KEY=your_openai_api_key_here
-GOOGLE_APPLICATION_CREDENTIALS=path/to/your/google_credentials.json
-
-# Hatena Bookmark
-HATENA_USERNAME=your_hatena_username
-
-# Application Settings
-DB_PATH=./data/db/hatebu-audio.db
-AUDIO_OUTPUT_DIR=./data/audio
-LOG_LEVEL=info
-
-# Cloudflare Settings (for Podcast)
-CLOUDFLARE_ACCOUNT_ID=your_cloudflare_account_id
-CLOUDFLARE_ACCESS_KEY_ID=your_cloudflare_access_key_id
-CLOUDFLARE_SECRET_ACCESS_KEY=your_cloudflare_secret_access_key
-CLOUDFLARE_R2_BUCKET=your_r2_bucket_name
-CLOUDFLARE_R2_PUBLIC_URL=https://your-public-bucket-url.example.com
-CLOUDFLARE_PAGES_PROJECT=your_pages_project_name
-PODCAST_WEBSITE_URL=https://your-podcast-website.pages.dev
-PODCAST_FEED_URL=https://your-podcast-website.pages.dev/feed.xml
-```
+- `.env`ファイルをコピーして`src/website/.env`ファイルを作成します。
 
 5. データベースを初期化します。
 
@@ -85,7 +63,7 @@ npm run db:init
 ### 音声の作成/feed作成/websiteの更新を一気に行うコマンド
 
 ```bash
-npm run dev -- src/scripts/runPodcastWorkflow.ts
+npm run podcast:all
 ```
 
 ### コマンドラインインターフェース
