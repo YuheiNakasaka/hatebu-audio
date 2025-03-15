@@ -9,7 +9,7 @@ import {
   getEpisodeById,
   getPodcastSettings,
   getDummyPodcastSettings,
-} from '../../lib/api';
+} from '../../lib/api.server';
 
 interface EpisodeProps {
   episode: PodcastEpisode;

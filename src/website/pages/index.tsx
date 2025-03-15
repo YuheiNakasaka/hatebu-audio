@@ -3,7 +3,7 @@ import Layout from '../components/Layout';
 import EpisodeCard from '../components/EpisodeCard';
 import styles from '../styles/Home.module.css';
 import { PodcastEpisode, PodcastSettings } from '../../types';
-import { getAllEpisodes, getPodcastSettings, getDummyEpisodes, getDummyPodcastSettings } from '../lib/api';
+import { getAllEpisodes, getPodcastSettings, getDummyEpisodes, getDummyPodcastSettings } from '../lib/api.server';
 
 interface HomeProps {
   episodes: PodcastEpisode[];

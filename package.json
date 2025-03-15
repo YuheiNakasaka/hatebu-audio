@@ -8,6 +8,7 @@
     "dev": "ts-node src/index.ts",
     "build": "tsc",
     "build:website": "cd src/website && next build && mkdir -p ../../dist/website && cp -r out/* ../../dist/website/",
+    "dev:website": "cd src/website && next dev",
     "lint": "biome lint .",
     "format": "biome format --write .",
     "test": "jest",

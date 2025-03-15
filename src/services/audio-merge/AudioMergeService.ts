@@ -217,7 +217,7 @@ export class DefaultAudioMergeService implements AudioMergeService {
   async mergeAudioFiles(
     inputFiles: string[], 
     outputFile: string, 
-    silenceDuration: number = 2.5
+    silenceDuration: number = 1.3
   ): Promise<string> {
     try {
       // 入力ファイルの存在確認

@@ -325,7 +325,7 @@ program
     // 音声ファイル生成
     console.log(chalk.blue("\n5. 音声ファイルの生成"));
     const spinner5 = ora("音声ファイルを生成中...").start();
-    
+    let totalEpisodeCount = 0;
     try {
       const result5 = await ttsService.processUnprocessedNarrations(
         parseInt(options.limit)
@@ -336,6 +336,7 @@ program
       if (result5.status === ProcessStatus.SUCCESS) {
         console.log(chalk.green(`✓ ${result5.message}`));
         if (result5.data) {
+          totalEpisodeCount += result5.data.length;
           console.log(chalk.gray(`  生成された音声ファイル: ${result5.data.length}件`));
           console.log(chalk.gray(`  ファイルパス:`));
           result5.data.forEach((audioFile) => {
@@ -363,15 +364,15 @@ program
       const audioOutputDir = process.env.AUDIO_OUTPUT_DIR || "./data/audio";
       const introFilePath = path.join(audioOutputDir, "radio_intro.mp3");
       const outroFilePath = path.join(audioOutputDir, "radio_outro.mp3");
-      
+
       // ファイルが存在しない場合のみ生成
       if (!fs.existsSync(introFilePath)) {
-        const introText = "こんにちは、はてなブックマークラジオへようこそ。今回のブックマークをご紹介します。";
+        const introText = `はてなブックマークラジオへようこそ。今回もYuhei Nakasakaがブックマークした${totalEpisodeCount}件の記事をご紹介します。`;
         await ttsService.synthesizeSpeech(introText, introFilePath);
       }
       
       if (!fs.existsSync(outroFilePath)) {
-        const outroText = "以上で今回のはてなブックマークラジオを終わります。お聴きいただきありがとうございました。";
+        const outroText = `以上で今回のはてなブックマークラジオを終わります。お聴きいただきありがとうございました。それではまた次回をお楽しみに！`;
         await ttsService.synthesizeSpeech(outroText, outroFilePath);
       }
       

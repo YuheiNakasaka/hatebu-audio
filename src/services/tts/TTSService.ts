@@ -97,7 +97,7 @@ export class GoogleCloudTTSService implements TTSService {
           },
           audioConfig: {
             audioEncoding: "MP3",
-            speakingRate: 1.25,
+            speakingRate: 1.2,
             pitch: 0.0,
           },
         });

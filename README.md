@@ -54,7 +54,6 @@ HATENA_USERNAME=your_hatena_username
 # Application Settings
 DB_PATH=./data/db/hatebu-audio.db
 AUDIO_OUTPUT_DIR=./data/audio
-MAX_BOOKMARKS_TO_PROCESS=10
 LOG_LEVEL=info
 
 # Cloudflare Settings (for Podcast)
@@ -82,6 +81,12 @@ npm run db:init
    d. APIトークンを生成し、アクセスキーとシークレットキーを取得します。
 
 ## 使用方法
+
+### 音声の作成/feed作成/websiteの更新を一気に行うコマンド
+
+```bash
+npm run dev -- src/scripts/runPodcastWorkflow.ts
+```
 
 ### コマンドラインインターフェース
 
@@ -167,6 +172,18 @@ npm run dev -- fetch-bookmarks --username=your_hatena_username
 
 # 処理する最大件数を指定
 npm run dev -- fetch-bookmarks --limit=10
+```
+
+### websiteの開発
+
+```bash
+npm run dev:website
+```
+
+#### .envのシンボリックリンク作成
+
+```bash
+ln -s .env src/website/.env
 ```
 
 ### ラジオ風の挨拶と結び

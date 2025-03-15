@@ -1,6 +1,9 @@
 import path from 'path';
 import sqlite3 from 'sqlite3';
 import { PodcastEpisode, PodcastSettings } from '../../types';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 // データベース接続
 const getDb = () => {

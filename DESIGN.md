@@ -401,7 +401,6 @@ HATENA_USERNAME=razokulover
 # Application Settings
 DB_PATH=./data/db/hatebu-audio.db
 AUDIO_OUTPUT_DIR=./data/audio
-MAX_BOOKMARKS_TO_PROCESS=10
 LOG_LEVEL=info
 
 # Cloudflare Settings (for Podcast) - 新規追加
