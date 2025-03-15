@@ -13,6 +13,9 @@ const Header: React.FC = () => {
           <Link href="/" className={styles.navLink}>
             エピソード一覧
           </Link>
+          <Link href="/feed.xml" className={styles.navLink}>
+            RSSフィード
+          </Link>
         </nav>
       </div>
     </header>
