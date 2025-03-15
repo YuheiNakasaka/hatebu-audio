@@ -174,7 +174,7 @@ ${bookmarkInfo}
 
       const title = titleMatch
         ? titleMatch[1]
-        : `Yuhei Nakasakaのはてなブックマークラジオ #${episodeNumber}: ${bookmarks[0]?.title || "新着ブックマーク"}`;
+        : `#${episodeNumber}: ${bookmarks[0]?.title || "新着ブックマーク"}`;
       const description = descriptionMatch
         ? descriptionMatch[1]
         : `このエピソードでは、${bookmarks.length}件のブックマークを紹介します。`;
@@ -184,7 +184,7 @@ ${bookmarkInfo}
       console.error("タイトルと説明の生成に失敗しました:", error);
       // エラー時のデフォルト値
       return {
-        title: `Yuhei Nakasakaのはてなブックマークラジオ #${episodeNumber}: ${bookmarks[0]?.title || "新着ブックマーク"}`,
+        title: `#${episodeNumber}: ${bookmarks[0]?.title || "新着ブックマーク"}`,
         description: `このエピソードでは、${bookmarks.length}件のブックマークを紹介します。`,
       };
     }

@@ -1,4 +1,8 @@
 /** @type {import('next').NextConfig} */
+// .envファイルから環境変数をロード
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
+
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
@@ -13,6 +17,7 @@ const nextConfig = {
   env: {
     PODCAST_TITLE: 'はてなブックマークラジオ',
     PODCAST_DESCRIPTION: 'はてなブックマークの記事を要約して音声化したポッドキャスト',
+    PODCAST_WEBSITE_URL: process.env.PODCAST_WEBSITE_URL || 'https://your-podcast-website.pages.dev',
   },
 };
 
