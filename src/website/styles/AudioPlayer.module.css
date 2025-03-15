@@ -77,6 +77,45 @@
   padding: 1rem;
 }
 
+.playbackControls {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.playbackRateTitle {
+  font-size: 0.9rem;
+  color: var(--dark-gray);
+}
+
+.rateButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.rateButton {
+  padding: 0.3rem 0.6rem;
+  background-color: var(--light-gray);
+  border: 1px solid var(--gray);
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.rateButton:hover {
+  background-color: var(--gray);
+}
+
+.activeRate {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
 @media (max-width: 768px) {
   .controls {
     flex-direction: column;
@@ -84,5 +123,10 @@
   
   .timeControls {
     width: 100%;
+  }
+  
+  .rateButtons {
+    width: 100%;
+    justify-content: center;
   }
 }

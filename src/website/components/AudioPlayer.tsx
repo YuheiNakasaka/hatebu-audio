@@ -10,6 +10,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [playbackRate, setPlaybackRate] = useState(1.0);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -40,6 +41,14 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl }) => {
       audio.play();
     }
     setIsPlaying(!isPlaying);
+  };
+  
+  const changePlaybackRate = (rate: number) => {
+    const audio = audioRef.current;
+    if (!audio || !audioUrl) return;
+    
+    audio.playbackRate = rate;
+    setPlaybackRate(rate);
   };
 
   const formatTime = (time: number) => {
@@ -85,6 +94,21 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl }) => {
             className={styles.progress}
           />
           <span className={styles.time}>{formatTime(duration)}</span>
+        </div>
+      </div>
+      
+      <div className={styles.playbackControls}>
+        <div className={styles.playbackRateTitle}>再生速度:</div>
+        <div className={styles.rateButtons}>
+          {[0.5, 0.75, 1.0, 1.25, 1.5, 2.0].map((rate) => (
+            <button
+              key={rate}
+              onClick={() => changePlaybackRate(rate)}
+              className={`${styles.rateButton} ${playbackRate === rate ? styles.activeRate : ''}`}
+            >
+              {rate}x
+            </button>
+          ))}
         </div>
       </div>
     </div>
