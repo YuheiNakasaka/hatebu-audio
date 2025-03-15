@@ -58,9 +58,10 @@ export class PodcastFeedService {
       const feedOptions = {
         title: settings.title,
         description: settings.description || "",
-        feed_url: settings.feed_url || process.env.PODCAST_FEED_URL || "",
-        site_url: settings.website_url || process.env.PODCAST_WEBSITE_URL || "",
-        image_url: settings.image_url || "",
+        feedUrl: process.env.PODCAST_FEED_URL || "",
+        siteUrl: process.env.PODCAST_WEBSITE_URL || "",
+        generator: "Hatebu Audio",
+        imageUrl: settings.image_url || "",
         author: settings.author || "",
         language: settings.language || "ja",
         categories: [settings.category || "Technology"],
@@ -103,6 +104,7 @@ export class PodcastFeedService {
           },
           itunesDuration: episode.duration ? this.formatDuration(episode.duration) : "00:00:00",
           itunesExplicit: settings.explicit || false,
+          itunesImage: settings.image_url || "",
         });
       }
 
