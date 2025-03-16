@@ -124,10 +124,10 @@ export class CloudflareR2UploadService {
     try {
       // ファイル名の取得
       const fileName = path.basename(filePath);
-      
+
       // アップロード先のキーを生成
       const key = `episodes/episode-${episodeNumber}/${fileName}`;
-      
+
       // ファイルをアップロード
       return await this.uploadFile(filePath, key);
     } catch (error) {

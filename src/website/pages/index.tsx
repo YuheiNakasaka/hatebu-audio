@@ -1,9 +1,14 @@
-import { GetStaticProps } from 'next';
-import Layout from '../components/Layout';
-import EpisodeCard from '../components/EpisodeCard';
-import styles from '../styles/Home.module.css';
-import { PodcastEpisode, PodcastSettings } from '../../types';
-import { getAllEpisodes, getPodcastSettings, getDummyEpisodes, getDummyPodcastSettings } from '../lib/api.server';
+import { GetStaticProps } from "next";
+import Layout from "../components/Layout";
+import EpisodeCard from "../components/EpisodeCard";
+import styles from "../styles/Home.module.css";
+import { PodcastEpisode, PodcastSettings } from "../../types";
+import {
+  getAllEpisodes,
+  getPodcastSettings,
+  getDummyEpisodes,
+  getDummyPodcastSettings,
+} from "../lib/api.server";
 
 interface HomeProps {
   episodes: PodcastEpisode[];
@@ -16,16 +21,12 @@ export default function Home({ episodes, settings }: HomeProps) {
       <div className={styles.container}>
         <div className={styles.header}>
           <h1 className={styles.title}>{settings.title}</h1>
-          {settings.description && (
-            <p className={styles.description}>{settings.description}</p>
-          )}
+          {settings.description && <p className={styles.description}>{settings.description}</p>}
         </div>
-        
+
         <div className={styles.episodeGrid}>
           {episodes.length > 0 ? (
-            episodes.map((episode) => (
-              <EpisodeCard key={episode.id} episode={episode} />
-            ))
+            episodes.map((episode) => <EpisodeCard key={episode.id} episode={episode} />)
           ) : (
             <p>エピソードがまだありません。</p>
           )}
@@ -40,16 +41,16 @@ export const getStaticProps: GetStaticProps = async () => {
     // データベースからエピソードと設定を取得
     const episodes = await getAllEpisodes();
     const settings = await getPodcastSettings();
-    
+
     return {
       props: {
         episodes: episodes || [],
         settings: settings || getDummyPodcastSettings(),
-      }
+      },
     };
   } catch (error) {
-    console.error('Error fetching data:', error);
-    
+    console.error("Error fetching data:", error);
+
     // エラー時はダミーデータを使用
     return {
       props: {

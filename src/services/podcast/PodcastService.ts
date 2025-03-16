@@ -43,7 +43,9 @@ export class PodcastService {
    * @param settings 更新する設定情報
    * @returns 処理結果
    */
-  async updateSettings(settings: Partial<PodcastSettings>): Promise<ProcessResult<PodcastSettings>> {
+  async updateSettings(
+    settings: Partial<PodcastSettings>
+  ): Promise<ProcessResult<PodcastSettings>> {
     try {
       const success = await this.podcastSettingsModel.updateSettings(settings);
       if (!success) {
@@ -113,7 +115,8 @@ export class PodcastService {
       if (!episode) {
         if (options?.autoMetadata) {
           // メタデータを自動生成
-          const metadataResult = await this.metadataService.generateEpisodeMetadata(mergedAudioFileId);
+          const metadataResult =
+            await this.metadataService.generateEpisodeMetadata(mergedAudioFileId);
           if (metadataResult.status !== ProcessStatus.SUCCESS || !metadataResult.data) {
             return {
               status: ProcessStatus.ERROR,
@@ -123,7 +126,7 @@ export class PodcastService {
           episode = metadataResult.data;
         } else {
           // エピソード番号を取得
-          const episodeNumber = await this.podcastEpisodeModel.getLatestEpisodeNumber() + 1;
+          const episodeNumber = (await this.podcastEpisodeModel.getLatestEpisodeNumber()) + 1;
 
           // エピソード情報を作成
           const newEpisode: PodcastEpisode = {
@@ -142,10 +145,13 @@ export class PodcastService {
       }
 
       // エピソード番号を取得
-      const episodeNumber = episode.id || await this.podcastEpisodeModel.getLatestEpisodeNumber();
+      const episodeNumber = episode.id || (await this.podcastEpisodeModel.getLatestEpisodeNumber());
 
       // 音声ファイルをアップロード
-      const uploadResult = await this.uploadService.uploadAudioFile(mergedAudioFile.file_path, episodeNumber);
+      const uploadResult = await this.uploadService.uploadAudioFile(
+        mergedAudioFile.file_path,
+        episodeNumber
+      );
       if (uploadResult.status !== ProcessStatus.SUCCESS || !uploadResult.data) {
         return {
           status: ProcessStatus.ERROR,
@@ -269,16 +275,16 @@ export class PodcastService {
     try {
       const websiteDir = path.join(process.cwd(), "src", "website");
       const outputDir = path.join(process.cwd(), "dist", "website");
-      
+
       // 出力ディレクトリが存在しない場合は作成
       if (!fs.existsSync(outputDir)) {
         fs.mkdirSync(outputDir, { recursive: true });
       }
-      
+
       // Next.jsのビルドコマンドを実行
       const command = `cd ${websiteDir} && npx next build`;
-      execSync(command, { stdio: 'inherit' });
-      
+      execSync(command, { stdio: "inherit" });
+
       // ビルド結果のoutディレクトリをdist/websiteディレクトリにコピー
       const outDir = path.join(websiteDir, "out");
       if (!fs.existsSync(outDir)) {
@@ -287,7 +293,7 @@ export class PodcastService {
           message: "Webサイトのビルドに失敗しました。outディレクトリが見つかりません。",
         };
       }
-      
+
       // dist/websiteディレクトリの中身を空にする
       const files = fs.readdirSync(outputDir);
       for (const file of files) {
@@ -298,7 +304,7 @@ export class PodcastService {
           fs.unlinkSync(filePath);
         }
       }
-      
+
       // outディレクトリの中身をdist/websiteディレクトリにコピー
       const outFiles = fs.readdirSync(outDir);
       for (const file of outFiles) {
@@ -310,7 +316,7 @@ export class PodcastService {
           fs.copyFileSync(srcPath, destPath);
         }
       }
-      
+
       return {
         status: ProcessStatus.SUCCESS,
         message: "Webサイトのビルドに成功しました",
@@ -402,7 +408,7 @@ export class PodcastService {
       }
 
       // タイトルと説明を生成
-      const episodeNumber = episode.id || await this.podcastEpisodeModel.getLatestEpisodeNumber();
+      const episodeNumber = episode.id || (await this.podcastEpisodeModel.getLatestEpisodeNumber());
       const { title, description } = await this.metadataService.generateTitleAndDescription(
         bookmarks,
         episodeNumber

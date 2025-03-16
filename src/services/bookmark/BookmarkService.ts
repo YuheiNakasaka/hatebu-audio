@@ -49,8 +49,8 @@ export class HatenaBookmarkService implements BookmarkService {
     this.bookmarkModel = new BookmarkModel();
     this.parser = new RssParser({
       customFields: {
-        item: ["dc:subject"]
-      }
+        item: ["dc:subject"],
+      },
     });
   }
 
@@ -64,7 +64,9 @@ export class HatenaBookmarkService implements BookmarkService {
     // ユーザー名の取得
     const hatenaUsername = username || process.env.HATENA_USERNAME;
     if (!hatenaUsername) {
-      throw new Error("はてなユーザー名が指定されていません。環境変数HATENA_USERNAMEを設定してください。");
+      throw new Error(
+        "はてなユーザー名が指定されていません。環境変数HATENA_USERNAMEを設定してください。"
+      );
     }
 
     // RSSフィードのURL
@@ -76,15 +78,13 @@ export class HatenaBookmarkService implements BookmarkService {
       const feed = await this.parser.parseString(response.data);
 
       // ブックマーク情報の抽出
-      const bookmarkItems: HatenaBookmarkItem[] = feed.items
-        .slice(0, limit)
-        .map((item) => ({
-          title: item.title || "",
-          link: item.link || "",
-          pubDate: item.pubDate || new Date().toISOString(),
-          description: item.contentSnippet || "",
-          categories: item.categories || (item["dc:subject"] ? [item["dc:subject"]] : []),
-        }));
+      const bookmarkItems: HatenaBookmarkItem[] = feed.items.slice(0, limit).map((item) => ({
+        title: item.title || "",
+        link: item.link || "",
+        pubDate: item.pubDate || new Date().toISOString(),
+        description: item.contentSnippet || "",
+        categories: item.categories || (item["dc:subject"] ? [item["dc:subject"]] : []),
+      }));
 
       return bookmarkItems;
     } catch (error) {
@@ -109,7 +109,7 @@ export class HatenaBookmarkService implements BookmarkService {
         try {
           // URLでブックマークを検索
           const existingBookmark = await this.bookmarkModel.findByUrl(item.link);
-          
+
           // 既存のブックマークがある場合はスキップ
           if (existingBookmark) {
             continue;
@@ -128,7 +128,7 @@ export class HatenaBookmarkService implements BookmarkService {
 
           // ブックマークの保存
           const bookmarkId = await this.bookmarkModel.create(bookmark);
-          
+
           // IDを設定して保存済みブックマークに追加
           bookmark.id = bookmarkId;
           savedBookmarks.push(bookmark);
@@ -144,7 +144,9 @@ export class HatenaBookmarkService implements BookmarkService {
         return {
           status: ProcessStatus.SUCCESS,
           data: savedBookmarks,
-          message: `${savedBookmarks.length}件のブックマークを保存しました。${errors.length > 0 ? `(${errors.length}件のエラーが発生しました)` : ""}`,
+          message: `${savedBookmarks.length}件のブックマークを保存しました。${
+            errors.length > 0 ? `(${errors.length}件のエラーが発生しました)` : ""
+          }`,
         };
       } else if (errors.length > 0) {
         return {
@@ -175,14 +177,19 @@ export class HatenaBookmarkService implements BookmarkService {
    * @param limit 取得する最大件数（デフォルト: 20）
    * @returns 保存結果
    */
-  async fetchAndSaveNewBookmarks(username?: string, limit = 20): Promise<ProcessResult<Bookmark[]>> {
+  async fetchAndSaveNewBookmarks(
+    username?: string,
+    limit = 20
+  ): Promise<ProcessResult<Bookmark[]>> {
     try {
       // ブックマークの取得
       const bookmarkItems = await this.fetchBookmarks(username, limit);
 
       // タグがついているものだけを保存
-      const filteredBookmarkItems = bookmarkItems.filter((item) => item.categories && item.categories.length > 0);
-      
+      const filteredBookmarkItems = bookmarkItems.filter(
+        (item) => item.categories && item.categories.length > 0
+      );
+
       // ブックマークの保存
       return await this.saveBookmarks(filteredBookmarkItems);
     } catch (error) {
@@ -207,7 +214,7 @@ export class HatenaBookmarkService implements BookmarkService {
     if (url.endsWith(".pdf")) {
       return "pdf";
     }
-    
+
     // デフォルトはarticle
     return "article";
   }

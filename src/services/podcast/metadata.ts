@@ -1,7 +1,12 @@
 import { OpenAI } from "openai";
 import dotenv from "dotenv";
 import { ProcessResult, ProcessStatus, Bookmark, PodcastEpisode } from "../../types";
-import { BookmarkModel, MergedAudioFileModel, PodcastEpisodeModel, AudioFileModel } from "../../models";
+import {
+  BookmarkModel,
+  MergedAudioFileModel,
+  PodcastEpisodeModel,
+  AudioFileModel,
+} from "../../models";
 import fs from "fs";
 import { getAudioDurationInSeconds } from "get-audio-duration";
 
@@ -40,9 +45,7 @@ export class PodcastMetadataService {
    * @param mergedAudioFileId 結合音声ファイルID
    * @returns 処理結果
    */
-  async generateEpisodeMetadata(
-    mergedAudioFileId: number
-  ): Promise<ProcessResult<PodcastEpisode>> {
+  async generateEpisodeMetadata(mergedAudioFileId: number): Promise<ProcessResult<PodcastEpisode>> {
     try {
       // 結合音声ファイルの取得
       const mergedAudioFile = await this.mergedAudioFileModel.findById(mergedAudioFileId);
@@ -54,7 +57,8 @@ export class PodcastMetadataService {
       }
 
       // 既存のエピソードを確認
-      const existingEpisode = await this.podcastEpisodeModel.findByMergedAudioFileId(mergedAudioFileId);
+      const existingEpisode =
+        await this.podcastEpisodeModel.findByMergedAudioFileId(mergedAudioFileId);
       if (existingEpisode) {
         return {
           status: ProcessStatus.SKIPPED,
@@ -75,10 +79,10 @@ export class PodcastMetadataService {
       const duration = await getAudioDurationInSeconds(mergedAudioFile.file_path);
 
       // 元のブックマーク情報を取得
-      const sourceFiles = Array.isArray(mergedAudioFile.source_files) 
-        ? mergedAudioFile.source_files 
+      const sourceFiles = Array.isArray(mergedAudioFile.source_files)
+        ? mergedAudioFile.source_files
         : JSON.parse(mergedAudioFile.source_files as unknown as string);
-      
+
       const bookmarkIds: number[] = [];
       const bookmarks: Bookmark[] = [];
 
@@ -91,10 +95,13 @@ export class PodcastMetadataService {
       }
 
       // エピソード番号を取得
-      const episodeNumber = await this.podcastEpisodeModel.getLatestEpisodeNumber() + 1;
+      const episodeNumber = (await this.podcastEpisodeModel.getLatestEpisodeNumber()) + 1;
 
       // タイトルと説明を生成
-      const { title, description } = await this.generateTitleAndDescription(bookmarks, episodeNumber);
+      const { title, description } = await this.generateTitleAndDescription(
+        bookmarks,
+        episodeNumber
+      );
 
       // エピソード情報を作成
       const episode: PodcastEpisode = {
@@ -141,9 +148,7 @@ export class PodcastMetadataService {
   ): Promise<{ title: string; description: string }> {
     try {
       // ブックマーク情報の文字列を作成
-      const bookmarkInfo = bookmarks
-        .map((bookmark) => `- ${bookmark.title}`)
-        .join("\n");
+      const bookmarkInfo = bookmarks.map((bookmark) => `- ${bookmark.title}`).join("\n");
 
       // プロンプトの作成
       const prompt = `
@@ -195,11 +200,13 @@ ${bookmarkInfo}
    */
   async generateDescription(bookmarks: Bookmark[]): Promise<string> {
     const introDuration = 6;
-    const silenceDuration = 1.3
-    const audioFiles = await Promise.all(bookmarks.map(async (bookmark) => {
-      const audioFile = await this.audioFileModel.findByBookmarkId(bookmark.id as number);
-      return audioFile;
-    }));
+    const silenceDuration = 1.3;
+    const audioFiles = await Promise.all(
+      bookmarks.map(async (bookmark) => {
+        const audioFile = await this.audioFileModel.findByBookmarkId(bookmark.id as number);
+        return audioFile;
+      })
+    );
     let totalDuration = introDuration + silenceDuration;
     let descriptions: string[] = [];
     for (const audioFile of audioFiles.sort((a, b) => (a?.id as number) - (b?.id as number))) {
@@ -216,5 +223,4 @@ ${bookmarkInfo}
     const seconds = `00${Math.floor(duration % 60)}`.slice(-2);
     return `${hours}:${minutes}:${seconds}`;
   }
-
 }

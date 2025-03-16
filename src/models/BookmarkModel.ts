@@ -41,9 +41,7 @@ export class BookmarkModel {
     await this.db.run(sql, params);
 
     // 作成されたブックマークのIDを取得
-    const result = await this.db.get<{ id: number }>(
-      "SELECT last_insert_rowid() as id"
-    );
+    const result = await this.db.get<{ id: number }>("SELECT last_insert_rowid() as id");
 
     return result?.id || 0;
   }
@@ -111,7 +109,9 @@ export class BookmarkModel {
    * @param audioFileId 音声ファイルID
    * @returns 音声ファイルとブックマーク情報
    */
-  async findByAudioFileId(audioFileId: number): Promise<{ audio_file: AudioFile; bookmark: Bookmark } | null> {
+  async findByAudioFileId(
+    audioFileId: number
+  ): Promise<{ audio_file: AudioFile; bookmark: Bookmark } | null> {
     await this.db.connect();
 
     const sql = `
@@ -126,7 +126,7 @@ export class BookmarkModel {
       WHERE 
         a.id = ?
     `;
-    
+
     const result = await this.db.get<any>(sql, [audioFileId]);
 
     if (!result) {
@@ -139,7 +139,9 @@ export class BookmarkModel {
       bookmark_id: result.bookmark_id,
       file_path: result.file_path,
       duration: result.duration,
-      generated_at: result.audio_file_created_at ? new Date(result.audio_file_created_at) : undefined,
+      generated_at: result.audio_file_created_at
+        ? new Date(result.audio_file_created_at)
+        : undefined,
     };
 
     const bookmark: Bookmark = {

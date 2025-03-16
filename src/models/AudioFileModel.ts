@@ -28,18 +28,12 @@ export class AudioFileModel {
       ) VALUES (?, ?, ?)
     `;
 
-    const params = [
-      audioFile.bookmark_id,
-      audioFile.file_path,
-      audioFile.duration || null,
-    ];
+    const params = [audioFile.bookmark_id, audioFile.file_path, audioFile.duration || null];
 
     await this.db.run(sql, params);
 
     // 作成された音声ファイルのIDを取得
-    const result = await this.db.get<{ id: number }>(
-      "SELECT last_insert_rowid() as id"
-    );
+    const result = await this.db.get<{ id: number }>("SELECT last_insert_rowid() as id");
 
     return result?.id || 0;
   }

@@ -60,31 +60,27 @@ export class PodcastEpisodeModel {
    */
   async findById(id: number): Promise<PodcastEpisode | null> {
     return new Promise((resolve, reject) => {
-      this.db.get(
-        `SELECT * FROM podcast_episodes WHERE id = ?`,
-        [id],
-        (err, row: any) => {
-          if (err) {
-            reject(err);
-          } else if (!row) {
-            resolve(null);
-          } else {
-            const episode: PodcastEpisode = {
-              id: row.id,
-              merged_audio_file_id: row.merged_audio_file_id,
-              title: row.title,
-              description: row.description,
-              source_bookmarks: JSON.parse(row.source_bookmarks || "[]"),
-              published_at: row.published_at,
-              duration: row.duration,
-              file_size: row.file_size,
-              storage_url: row.storage_url,
-              is_published: row.is_published === 1,
-            };
-            resolve(episode);
-          }
+      this.db.get(`SELECT * FROM podcast_episodes WHERE id = ?`, [id], (err, row: any) => {
+        if (err) {
+          reject(err);
+        } else if (!row) {
+          resolve(null);
+        } else {
+          const episode: PodcastEpisode = {
+            id: row.id,
+            merged_audio_file_id: row.merged_audio_file_id,
+            title: row.title,
+            description: row.description,
+            source_bookmarks: JSON.parse(row.source_bookmarks || "[]"),
+            published_at: row.published_at,
+            duration: row.duration,
+            file_size: row.file_size,
+            storage_url: row.storage_url,
+            is_published: row.is_published === 1,
+          };
+          resolve(episode);
         }
-      );
+      });
     });
   }
 
@@ -130,7 +126,11 @@ export class PodcastEpisodeModel {
    * @param publishedOnly 公開済みのみ取得するかどうか
    * @returns Podcastエピソード情報の配列
    */
-  async findAll(limit: number = 100, offset: number = 0, publishedOnly: boolean = false): Promise<PodcastEpisode[]> {
+  async findAll(
+    limit: number = 100,
+    offset: number = 0,
+    publishedOnly: boolean = false
+  ): Promise<PodcastEpisode[]> {
     return new Promise((resolve, reject) => {
       const query = publishedOnly
         ? `SELECT * FROM podcast_episodes WHERE is_published = 1 ORDER BY published_at DESC LIMIT ? OFFSET ?`
@@ -237,17 +237,13 @@ export class PodcastEpisodeModel {
    */
   async delete(id: number): Promise<boolean> {
     return new Promise((resolve, reject) => {
-      this.db.run(
-        `DELETE FROM podcast_episodes WHERE id = ?`,
-        [id],
-        function (err) {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(this.changes > 0);
-          }
+      this.db.run(`DELETE FROM podcast_episodes WHERE id = ?`, [id], function (err) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(this.changes > 0);
         }
-      );
+      });
     });
   }
 
@@ -257,16 +253,13 @@ export class PodcastEpisodeModel {
    */
   async getLatestEpisodeNumber(): Promise<number> {
     return new Promise((resolve, reject) => {
-      this.db.get(
-        `SELECT COUNT(*) as count FROM podcast_episodes`,
-        (err, row: any) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(row.count);
-          }
+      this.db.get(`SELECT COUNT(*) as count FROM podcast_episodes`, (err, row: any) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(row.count);
         }
-      );
+      });
     });
   }
 }

@@ -23,7 +23,9 @@ export class CloudflarePagesDeployService {
 
     // 必要な環境変数が設定されているか確認
     if (!this.projectName) {
-      throw new Error("Cloudflare Pagesプロジェクト名が設定されていません。環境変数を確認してください。");
+      throw new Error(
+        "Cloudflare Pagesプロジェクト名が設定されていません。環境変数を確認してください。"
+      );
     }
   }
 
@@ -37,7 +39,7 @@ export class CloudflarePagesDeployService {
       if (!fs.existsSync(this.websiteDir)) {
         return {
           status: ProcessStatus.ERROR,
-          message: `ビルド済みWebサイトが見つかりません: ${this.websiteDir}`
+          message: `ビルド済みWebサイトが見つかりません: ${this.websiteDir}`,
         };
       }
 

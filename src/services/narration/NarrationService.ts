@@ -64,7 +64,9 @@ export class OpenAINarrationService implements NarrationService {
    */
   async generateNarration(summary: string, title: string): Promise<string> {
     if (!process.env.OPENAI_API_KEY) {
-      throw new Error("OpenAI APIキーが設定されていません。環境変数OPENAI_API_KEYを設定してください。");
+      throw new Error(
+        "OpenAI APIキーが設定されていません。環境変数OPENAI_API_KEYを設定してください。"
+      );
     }
 
     try {
@@ -84,7 +86,7 @@ export class OpenAINarrationService implements NarrationService {
 - 「サラです」といった自己紹介をしないこと
 - ソースコードは読み上げられないので含めないこと
 - 「<記事のタイトル>について紹介します。この記事は〜」といった感じの書き出しで台本を作成すること
-`
+`,
           },
           {
             role: "user",
@@ -97,7 +99,7 @@ export class OpenAINarrationService implements NarrationService {
 
       // 応答からナレーションテキストを取得
       const narrationText = response.choices[0]?.message?.content?.trim() || "";
-      
+
       if (!narrationText) {
         throw new Error("ナレーションの生成に失敗しました。APIからの応答が空です。");
       }
@@ -223,17 +225,25 @@ export class OpenAINarrationService implements NarrationService {
       for (const bookmarkId of unprocessedBookmarkIds) {
         try {
           const result = await this.generateAndSaveNarration(bookmarkId);
-          
+
           if (result.status === ProcessStatus.SUCCESS && result.data) {
             results.push(result.data);
           } else if (result.status === ProcessStatus.ERROR) {
             const bookmark = await this.bookmarkModel.findById(bookmarkId);
-            errors.push(`ブックマーク "${bookmark?.title || bookmarkId}" の処理に失敗しました: ${result.message}`);
+            errors.push(
+              `ブックマーク "${bookmark?.title || bookmarkId}" の処理に失敗しました: ${
+                result.message
+              }`
+            );
           }
         } catch (error) {
           if (error instanceof Error) {
             const bookmark = await this.bookmarkModel.findById(bookmarkId);
-            errors.push(`ブックマーク "${bookmark?.title || bookmarkId}" の処理に失敗しました: ${error.message}`);
+            errors.push(
+              `ブックマーク "${bookmark?.title || bookmarkId}" の処理に失敗しました: ${
+                error.message
+              }`
+            );
           }
         }
       }
@@ -243,7 +253,9 @@ export class OpenAINarrationService implements NarrationService {
         return {
           status: ProcessStatus.SUCCESS,
           data: results,
-          message: `${results.length}件のナレーションを生成して保存しました。${errors.length > 0 ? `(${errors.length}件のエラーが発生しました)` : ""}`,
+          message: `${results.length}件のナレーションを生成して保存しました。${
+            errors.length > 0 ? `(${errors.length}件のエラーが発生しました)` : ""
+          }`,
         };
       } else if (errors.length > 0) {
         return {

@@ -39,15 +39,15 @@ program
   .option("-l, --limit <number>", "取得する最大件数", "20")
   .action(async (options) => {
     const spinner = ora("ブックマーク情報を取得中...").start();
-    
+
     try {
       const result = await bookmarkService.fetchAndSaveNewBookmarks(
         options.username,
         parseInt(options.limit)
       );
-      
+
       spinner.stop();
-      
+
       if (result.status === ProcessStatus.SUCCESS) {
         console.log(chalk.green(`✓ ${result.message}`));
         if (result.data) {
@@ -71,14 +71,12 @@ program
   .option("-l, --limit <number>", "処理する最大件数", "10")
   .action(async (options) => {
     const spinner = ora("コンテンツを抽出中...").start();
-    
+
     try {
-      const result = await contentService.processUnprocessedBookmarks(
-        parseInt(options.limit)
-      );
-      
+      const result = await contentService.processUnprocessedBookmarks(parseInt(options.limit));
+
       spinner.stop();
-      
+
       if (result.status === ProcessStatus.SUCCESS) {
         console.log(chalk.green(`✓ ${result.message}`));
         if (result.data) {
@@ -102,14 +100,12 @@ program
   .option("-l, --limit <number>", "処理する最大件数", "10")
   .action(async (options) => {
     const spinner = ora("ナレーションを生成中...").start();
-    
+
     try {
-      const result = await narrationService.processUnprocessedSummaries(
-        parseInt(options.limit)
-      );
-      
+      const result = await narrationService.processUnprocessedSummaries(parseInt(options.limit));
+
       spinner.stop();
-      
+
       if (result.status === ProcessStatus.SUCCESS) {
         console.log(chalk.green(`✓ ${result.message}`));
         if (result.data) {
@@ -133,14 +129,12 @@ program
   .option("-l, --limit <number>", "処理する最大件数", "10")
   .action(async (options) => {
     const spinner = ora("音声ファイルを生成中...").start();
-    
+
     try {
-      const result = await ttsService.processUnprocessedNarrations(
-        parseInt(options.limit)
-      );
-      
+      const result = await ttsService.processUnprocessedNarrations(parseInt(options.limit));
+
       spinner.stop();
-      
+
       if (result.status === ProcessStatus.SUCCESS) {
         console.log(chalk.green(`✓ ${result.message}`));
         if (result.data) {
@@ -169,18 +163,15 @@ program
   .requiredOption("-n, --name <name>", "結合後のファイル名")
   .action(async (options) => {
     const spinner = ora("音声ファイルを結合中...").start();
-    
+
     try {
       // カンマ区切りの文字列を数値の配列に変換
       const audioFileIds = options.ids.split(",").map((id: string) => parseInt(id.trim()));
-      
-      const result = await audioMergeService.mergeAndSaveAudioFiles(
-        audioFileIds,
-        options.name
-      );
-      
+
+      const result = await audioMergeService.mergeAndSaveAudioFiles(audioFileIds, options.name);
+
       spinner.stop();
-      
+
       if (result.status === ProcessStatus.SUCCESS) {
         console.log(chalk.green(`✓ ${result.message}`));
         if (result.data) {
@@ -205,12 +196,12 @@ program
   .option("-n, --name <name>", "結合後のファイル名（指定しない場合は自動生成）")
   .action(async (options) => {
     const spinner = ora("未処理の音声ファイルを結合中...").start();
-    
+
     try {
       const result = await audioMergeService.mergeUnprocessedAudioFilesWithIntro(options.name);
-      
+
       spinner.stop();
-      
+
       if (result.status === ProcessStatus.SUCCESS) {
         console.log(chalk.green(`✓ ${result.message}`));
         if (result.data) {
@@ -236,19 +227,19 @@ program
   .option("-l, --limit <number>", "処理する最大件数", "20")
   .action(async (options) => {
     console.log(chalk.blue("=== はてなブックマーク音声化処理開始 ==="));
-    
+
     // ブックマーク取得
     console.log(chalk.blue("\n1. ブックマーク情報の取得"));
     const spinner1 = ora("ブックマーク情報を取得中...").start();
-    
+
     try {
       const result1 = await bookmarkService.fetchAndSaveNewBookmarks(
         options.username,
         parseInt(options.limit)
       );
-      
+
       spinner1.stop();
-      
+
       if (result1.status === ProcessStatus.SUCCESS) {
         console.log(chalk.green(`✓ ${result1.message}`));
         if (result1.data) {
@@ -265,18 +256,16 @@ program
       console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
       return;
     }
-    
+
     // コンテンツ抽出
     console.log(chalk.blue("\n2. コンテンツの抽出"));
     const spinner2 = ora("コンテンツを抽出中...").start();
-    
+
     try {
-      const result2 = await contentService.processUnprocessedBookmarks(
-        parseInt(options.limit)
-      );
-      
+      const result2 = await contentService.processUnprocessedBookmarks(parseInt(options.limit));
+
       spinner2.stop();
-      
+
       if (result2.status === ProcessStatus.SUCCESS) {
         console.log(chalk.green(`✓ ${result2.message}`));
         if (result2.data) {
@@ -293,18 +282,16 @@ program
       console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
       return;
     }
-    
+
     // ナレーション生成
     console.log(chalk.blue("\n4. ナレーションの生成"));
     const spinner4 = ora("ナレーションを生成中...").start();
-    
+
     try {
-      const result4 = await narrationService.processUnprocessedSummaries(
-        parseInt(options.limit)
-      );
-      
+      const result4 = await narrationService.processUnprocessedSummaries(parseInt(options.limit));
+
       spinner4.stop();
-      
+
       if (result4.status === ProcessStatus.SUCCESS) {
         console.log(chalk.green(`✓ ${result4.message}`));
         if (result4.data) {
@@ -321,17 +308,15 @@ program
       console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
       return;
     }
-    
+
     // 音声ファイル生成
     console.log(chalk.blue("\n5. 音声ファイルの生成"));
     const spinner5 = ora("音声ファイルを生成中...").start();
     try {
-      const result5 = await ttsService.processUnprocessedNarrations(
-        parseInt(options.limit)
-      );
-      
+      const result5 = await ttsService.processUnprocessedNarrations(parseInt(options.limit));
+
       spinner5.stop();
-      
+
       if (result5.status === ProcessStatus.SUCCESS) {
         console.log(chalk.green(`✓ ${result5.message}`));
         if (result5.data) {
@@ -352,11 +337,11 @@ program
       console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
       return;
     }
-    
+
     // 音声ファイル結合（挨拶と結びを追加）
     console.log(chalk.blue("\n6. 未処理の音声ファイルの結合（挨拶と結びを追加）"));
     const spinner6 = ora("未処理の音声ファイルを結合中...").start();
-    
+
     try {
       // 挨拶と結びの音声ファイルを生成（初回のみ）
       const audioOutputDir = process.env.AUDIO_OUTPUT_DIR || "./data/audio";
@@ -368,19 +353,19 @@ program
         const introText = `はてなブックマークラジオへようこそ。今回もYuhei Nakasakaがブックマークした記事をご紹介します。`;
         await ttsService.synthesizeSpeech(introText, introFilePath);
       }
-      
+
       if (!fs.existsSync(outroFilePath)) {
         const outroText = `以上で今回のはてなブックマークラジオを終わります。お聴きいただきありがとうございました。それではまた次回をお楽しみに！`;
         await ttsService.synthesizeSpeech(outroText, outroFilePath);
       }
-      
+
       // 新しいメソッドを使用して音声ファイルを結合
       const result6 = await audioMergeService.mergeUnprocessedAudioFilesWithIntro(
         `自動生成_${new Date().toISOString().slice(0, 10)}`
       );
-      
+
       spinner6.stop();
-      
+
       if (result6.status === ProcessStatus.SUCCESS) {
         console.log(chalk.green(`✓ ${result6.message}`));
         if (result6.data) {
@@ -396,7 +381,7 @@ program
       spinner6.stop();
       console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
     }
-    
+
     console.log(chalk.blue("\n=== はてなブックマーク音声化処理完了 ==="));
   });
 
@@ -414,10 +399,10 @@ program
   .option("-i, --image-url <imageUrl>", "アートワーク画像のURL")
   .action(async (options) => {
     const spinner = ora("Podcast設定を更新中...").start();
-    
+
     try {
       const settings: any = {};
-      
+
       if (options.title) settings.title = options.title;
       if (options.description) settings.description = options.description;
       if (options.author) settings.author = options.author;
@@ -426,11 +411,11 @@ program
       if (options.category) settings.category = options.category;
       if (options.explicit !== undefined) settings.explicit = options.explicit;
       if (options.imageUrl) settings.image_url = options.imageUrl;
-      
+
       const result = await podcastService.updateSettings(settings);
-      
+
       spinner.stop();
-      
+
       if (result.status === ProcessStatus.SUCCESS) {
         console.log(chalk.green(`✓ ${result.message}`));
         if (result.data) {
@@ -460,19 +445,16 @@ program
   .option("-a, --auto-metadata", "メタデータを自動生成する")
   .action(async (options) => {
     const spinner = ora("エピソードを公開中...").start();
-    
+
     try {
-      const result = await podcastService.publishEpisode(
-        parseInt(options.fileId),
-        {
-          title: options.title,
-          description: options.description,
-          autoMetadata: true,
-        }
-      );
-      
+      const result = await podcastService.publishEpisode(parseInt(options.fileId), {
+        title: options.title,
+        description: options.description,
+        autoMetadata: true,
+      });
+
       spinner.stop();
-      
+
       if (result.status === ProcessStatus.SUCCESS) {
         console.log(chalk.green(`✓ ${result.message}`));
         if (result.data) {
@@ -496,12 +478,12 @@ program
   .description("Podcast用のRSSフィードを生成")
   .action(async () => {
     const spinner = ora("RSSフィードを生成中...").start();
-    
+
     try {
       const result = await podcastService.generateAndDeployFeed();
-      
+
       spinner.stop();
-      
+
       if (result.status === ProcessStatus.SUCCESS) {
         console.log(chalk.green(`✓ ${result.message}`));
         if (result.data) {
@@ -524,12 +506,12 @@ program
   .description("PodcastのWebサイトをビルド")
   .action(async () => {
     const spinner = ora("Webサイトをビルド中...").start();
-    
+
     try {
       const result = await podcastService.buildWebsite();
-      
+
       spinner.stop();
-      
+
       if (result.status === ProcessStatus.SUCCESS) {
         console.log(chalk.green(`✓ ${result.message}`));
         if (result.data) {
@@ -550,12 +532,12 @@ program
   .description("PodcastのWebサイトをデプロイ")
   .action(async () => {
     const spinner = ora("Webサイトをデプロイ中...").start();
-    
+
     try {
       const result = await podcastService.deployWebsite();
-      
+
       spinner.stop();
-      
+
       if (result.status === ProcessStatus.SUCCESS) {
         console.log(chalk.green(`✓ ${result.message}`));
         if (result.data) {
@@ -579,7 +561,7 @@ program
     try {
       const result = await ttsService.updateAllAudioFileDurations();
       spinner.stop();
-      
+
       if (result.status === ProcessStatus.SUCCESS) {
         console.log(chalk.green(`✓ ${result.message}`));
       } else {
@@ -598,21 +580,22 @@ program
   .requiredOption("-i, --id <id>", "エピソードID")
   .action(async (options) => {
     const spinner = ora("エピソードのメタデータを更新中...").start();
-    
+
     try {
       const episodeId = parseInt(options.id);
-      
+
       // 更新前のエピソード情報を取得
       const episodeResult = await podcastService.getEpisodeById(episodeId);
-      const oldTitle = episodeResult.status === ProcessStatus.SUCCESS && episodeResult.data 
-        ? episodeResult.data.title 
-        : "不明";
-      
+      const oldTitle =
+        episodeResult.status === ProcessStatus.SUCCESS && episodeResult.data
+          ? episodeResult.data.title
+          : "不明";
+
       // エピソードのタイトルと説明を更新
       const result = await podcastService.updateEpisodeMetadata(episodeId);
-      
+
       spinner.stop();
-      
+
       if (result.status === ProcessStatus.SUCCESS) {
         console.log(chalk.green(`✓ ${result.message}`));
         if (result.data) {
@@ -620,7 +603,13 @@ program
           console.log(chalk.gray(`  更新後タイトル: ${result.data.title}`));
           if (result.data.description) {
             const previewLength = Math.min(100, result.data.description.length);
-            console.log(chalk.gray(`  更新後説明文: ${result.data.description.substring(0, previewLength)}${previewLength < result.data.description.length ? '...' : ''}`));
+            console.log(
+              chalk.gray(
+                `  更新後説明文: ${result.data.description.substring(0, previewLength)}${
+                  previewLength < result.data.description.length ? "..." : ""
+                }`
+              )
+            );
           }
         }
       } else {
@@ -635,30 +624,29 @@ program
 // Podcast公開コマンド（音声ファイルのアップロード、RSSフィード生成、Webサイトデプロイを一括実行）
 program
   .command("publish-podcast")
-  .description("音声ファイルをアップロードしてPodcastとして公開（RSSフィード生成、Webサイトデプロイを含む）")
+  .description(
+    "音声ファイルをアップロードしてPodcastとして公開（RSSフィード生成、Webサイトデプロイを含む）"
+  )
   .requiredOption("-f, --file-id <id>", "結合音声ファイルID")
   .option("-t, --title <title>", "エピソードのタイトル")
   .option("-d, --description <description>", "エピソードの説明")
   .option("-a, --auto-metadata", "メタデータを自動生成する")
   .action(async (options) => {
     console.log(chalk.blue("=== Podcast公開処理開始 ==="));
-    
+
     // エピソード公開
     console.log(chalk.blue("\n1. エピソードの公開"));
     const spinner1 = ora("エピソードを公開中...").start();
-    
+
     try {
-      const result1 = await podcastService.publishEpisode(
-        parseInt(options.fileId),
-        {
-          title: options.title,
-          description: options.description,
-          autoMetadata: true,
-        }
-      );
-      
+      const result1 = await podcastService.publishEpisode(parseInt(options.fileId), {
+        title: options.title,
+        description: options.description,
+        autoMetadata: true,
+      });
+
       spinner1.stop();
-      
+
       if (result1.status === ProcessStatus.SUCCESS) {
         console.log(chalk.green(`✓ ${result1.message}`));
         if (result1.data) {
@@ -676,16 +664,16 @@ program
       console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
       return;
     }
-        
+
     // Webサイトビルド
     console.log(chalk.blue("\n2. Webサイトのビルド"));
     const spinner2 = ora("Webサイトをビルド中...").start();
-    
+
     try {
       const result2 = await podcastService.buildWebsite();
-      
+
       spinner2.stop();
-      
+
       if (result2.status === ProcessStatus.SUCCESS) {
         console.log(chalk.green(`✓ ${result2.message}`));
         if (result2.data) {
@@ -700,16 +688,16 @@ program
       console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
       return;
     }
-    
+
     // Webサイトデプロイ
     console.log(chalk.blue("\n3. Webサイトのデプロイ"));
     const spinner3 = ora("Webサイトをデプロイ中...").start();
-    
+
     try {
       const result3 = await podcastService.deployWebsite();
-      
+
       spinner3.stop();
-      
+
       if (result3.status === ProcessStatus.SUCCESS) {
         console.log(chalk.green(`✓ ${result3.message}`));
         if (result3.data) {
@@ -726,12 +714,12 @@ program
     // RSSフィード生成
     console.log(chalk.blue("\n4. RSSフィードの生成"));
     const spinner4 = ora("RSSフィードを生成中...").start();
-    
+
     try {
       const result4 = await podcastService.generateAndDeployFeed();
-      
+
       spinner4.stop();
-      
+
       if (result4.status === ProcessStatus.SUCCESS) {
         console.log(chalk.green(`✓ ${result4.message}`));
         if (result4.data) {
@@ -752,11 +740,7 @@ program
 if (process.argv.length <= 2) {
   const cmd = program.commands.find((cmd) => cmd.name() === "interactive");
   if (cmd) {
-    cmd.parseAsync([
-      process.argv[0],
-      process.argv[1],
-      "interactive",
-    ]);
+    cmd.parseAsync([process.argv[0], process.argv[1], "interactive"]);
   }
 } else {
   program.parse(process.argv);

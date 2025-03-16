@@ -24,7 +24,11 @@ export interface AudioMergeService {
    * @param silenceDuration ファイル間の無音の長さ（秒）
    * @returns 結合した音声ファイルのパス
    */
-  mergeAudioFiles(inputFiles: string[], outputFile: string, silenceDuration?: number): Promise<string>;
+  mergeAudioFiles(
+    inputFiles: string[],
+    outputFile: string,
+    silenceDuration?: number
+  ): Promise<string>;
 
   /**
    * 音声ファイルを結合（挨拶と結びを追加）
@@ -36,10 +40,10 @@ export interface AudioMergeService {
    * @returns 結合した音声ファイルのパス
    */
   mergeAudioFilesWithIntro(
-    inputFiles: string[], 
+    inputFiles: string[],
     outputFile: string,
     introFile: string,
-    outroFile: string, 
+    outroFile: string,
     silenceDuration?: number
   ): Promise<string>;
 
@@ -49,7 +53,10 @@ export interface AudioMergeService {
    * @param name 結合音声ファイル名
    * @returns 処理結果
    */
-  mergeAndSaveAudioFiles(audioFileIds: number[], name: string): Promise<ProcessResult<MergedAudioFile>>;
+  mergeAndSaveAudioFiles(
+    audioFileIds: number[],
+    name: string
+  ): Promise<ProcessResult<MergedAudioFile>>;
 
   /**
    * 未処理の音声ファイル（まだマージされていない音声ファイル）を自動でマージする
@@ -98,15 +105,15 @@ export class DefaultAudioMergeService implements AudioMergeService {
    * @returns 結合した音声ファイルのパス
    */
   async mergeAudioFilesWithIntro(
-    inputFiles: string[], 
+    inputFiles: string[],
     outputFile: string,
     introFile: string,
-    outroFile: string, 
+    outroFile: string,
     silenceDuration: number = 2.5
   ): Promise<string> {
     // 挨拶ファイルと結びファイルを含めた配列を作成
     const allFiles = [introFile, ...inputFiles, outroFile];
-    
+
     // 既存のmergeAudioFilesメソッドを使用して結合
     return this.mergeAudioFiles(allFiles, outputFile, silenceDuration);
   }
@@ -116,12 +123,14 @@ export class DefaultAudioMergeService implements AudioMergeService {
    * @param name 結合音声ファイル名（指定しない場合は自動生成）
    * @returns 処理結果
    */
-  async mergeUnprocessedAudioFilesWithIntro(name?: string): Promise<ProcessResult<MergedAudioFile>> {
+  async mergeUnprocessedAudioFilesWithIntro(
+    name?: string
+  ): Promise<ProcessResult<MergedAudioFile>> {
     try {
       // 挨拶と結びの音声ファイルパス
       const introFilePath = path.join(this.audioOutputDir, "radio_intro.mp3");
       const outroFilePath = path.join(this.audioOutputDir, "radio_outro.mp3");
-      
+
       // 挨拶と結びの音声ファイルが存在するか確認
       if (!fs.existsSync(introFilePath) || !fs.existsSync(outroFilePath)) {
         return {
@@ -132,30 +141,30 @@ export class DefaultAudioMergeService implements AudioMergeService {
 
       // 既存の結合音声ファイル情報を取得
       const mergedAudioFiles = await this.mergedAudioFileModel.findAll(100000, 0);
-      
+
       // 既に結合済みの音声ファイルIDのセットを作成
       const mergedAudioFileIds = new Set<number>();
-      mergedAudioFiles.forEach(mergedFile => {
+      mergedAudioFiles.forEach((mergedFile) => {
         if (Array.isArray(mergedFile.source_files)) {
-          mergedFile.source_files.forEach(id => mergedAudioFileIds.add(id));
+          mergedFile.source_files.forEach((id) => mergedAudioFileIds.add(id));
         }
       });
-      
+
       // 全ての音声ファイルを取得
       const allAudioFiles = await this.audioFileModel.findAll(100000, 0);
-      
+
       // 未処理の音声ファイルIDを抽出
       const unprocessedAudioFileIds = allAudioFiles
-        .filter(file => file.id !== undefined && !mergedAudioFileIds.has(file.id))
-        .map(file => file.id as number);
-      
+        .filter((file) => file.id !== undefined && !mergedAudioFileIds.has(file.id))
+        .map((file) => file.id as number);
+
       if (unprocessedAudioFileIds.length === 0) {
         return {
           status: ProcessStatus.SKIPPED,
           message: "未処理の音声ファイルが見つかりませんでした。",
         };
       }
-      
+
       // 音声ファイル情報の取得
       const audioFiles: AudioFile[] = [];
       for (const id of unprocessedAudioFileIds) {
@@ -170,11 +179,16 @@ export class DefaultAudioMergeService implements AudioMergeService {
       }
 
       // 入力ファイルパスの配列を作成
-      const inputFiles = audioFiles.sort((a, b) => (a.id as number) - (b.id as number)).map(file => file.file_path);
+      const inputFiles = audioFiles
+        .sort((a, b) => (a.id as number) - (b.id as number))
+        .map((file) => file.file_path);
 
       // 出力ファイル名の生成
       const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-      const fileName = `${(name || `自動生成_${new Date().toISOString().slice(0, 10)}`).replace(/[^\w\s-]/g, "_")}_${timestamp}.mp3`;
+      const fileName = `${(name || `自動生成_${new Date().toISOString().slice(0, 10)}`).replace(
+        /[^\w\s-]/g,
+        "_"
+      )}_${timestamp}.mp3`;
       const outputPath = path.join(this.audioOutputDir, fileName);
 
       // 音声ファイルの結合（挨拶と結びを追加）
@@ -215,56 +229,58 @@ export class DefaultAudioMergeService implements AudioMergeService {
    * @returns 結合した音声ファイルのパス
    */
   async mergeAudioFiles(
-    inputFiles: string[], 
-    outputFile: string, 
+    inputFiles: string[],
+    outputFile: string,
     silenceDuration: number = 1.3
   ): Promise<string> {
     try {
       // 入力ファイルの存在確認
       for (const file of inputFiles) {
-        if (!await existsAsync(file)) {
+        if (!(await existsAsync(file))) {
           throw new Error(`入力ファイルが見つかりません: ${file}`);
         }
       }
 
       // 出力ディレクトリの確認と作成
       const outputDir = path.dirname(outputFile);
-      if (!await existsAsync(outputDir)) {
+      if (!(await existsAsync(outputDir))) {
         await mkdirAsync(outputDir, { recursive: true });
       }
 
       // FFmpegを使用して音声ファイルを結合
       return new Promise<string>((resolve, reject) => {
         const command = ffmpeg();
-        
+
         // 入力ファイルを追加
-        inputFiles.forEach(file => {
+        inputFiles.forEach((file) => {
           command.input(file);
         });
-        
+
         // ファイル間に無音を挿入するフィルターを構築
         if (inputFiles.length > 1) {
-          const filterComplex = inputFiles.map((_, index) => {
-            // 最後のファイル以外に対して処理
-            if (index < inputFiles.length - 1) {
-              return `[${index}]apad=pad_dur=${silenceDuration}[s${index}];`;
-            }
-            return `[${index}]apad=pad_dur=0[s${index}];`;
-          }).join('');
-          
+          const filterComplex = inputFiles
+            .map((_, index) => {
+              // 最後のファイル以外に対して処理
+              if (index < inputFiles.length - 1) {
+                return `[${index}]apad=pad_dur=${silenceDuration}[s${index}];`;
+              }
+              return `[${index}]apad=pad_dur=0[s${index}];`;
+            })
+            .join("");
+
           // 全てのストリームを連結
-          const concatParts = inputFiles.map((_, index) => `[s${index}]`).join('');
+          const concatParts = inputFiles.map((_, index) => `[s${index}]`).join("");
           const filterComplexFull = `${filterComplex}${concatParts}concat=n=${inputFiles.length}:v=0:a=1[out]`;
-          
-          command.complexFilter(filterComplexFull, 'out');
+
+          command.complexFilter(filterComplexFull, "out");
         }
-        
+
         // 結合処理を実行
         command
-          .on('error', (err) => {
+          .on("error", (err) => {
             reject(new Error(`音声ファイルの結合に失敗しました: ${err.message}`));
           })
-          .on('end', () => {
+          .on("end", () => {
             resolve(outputFile);
           })
           .save(outputFile);
@@ -283,7 +299,10 @@ export class DefaultAudioMergeService implements AudioMergeService {
    * @param name 結合音声ファイル名
    * @returns 処理結果
    */
-  async mergeAndSaveAudioFiles(audioFileIds: number[], name: string): Promise<ProcessResult<MergedAudioFile>> {
+  async mergeAndSaveAudioFiles(
+    audioFileIds: number[],
+    name: string
+  ): Promise<ProcessResult<MergedAudioFile>> {
     try {
       if (audioFileIds.length === 0) {
         return {
@@ -306,7 +325,7 @@ export class DefaultAudioMergeService implements AudioMergeService {
       }
 
       // 入力ファイルパスの配列を作成
-      const inputFiles = audioFiles.map(file => file.file_path);
+      const inputFiles = audioFiles.map((file) => file.file_path);
 
       // 出力ファイル名の生成
       const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
@@ -352,34 +371,34 @@ export class DefaultAudioMergeService implements AudioMergeService {
     try {
       // 既存の結合音声ファイル情報を取得
       const mergedAudioFiles = await this.mergedAudioFileModel.findAll(1000, 0);
-      
+
       // 既に結合済みの音声ファイルIDのセットを作成
       const mergedAudioFileIds = new Set<number>();
-      mergedAudioFiles.forEach(mergedFile => {
+      mergedAudioFiles.forEach((mergedFile) => {
         if (Array.isArray(mergedFile.source_files)) {
-          mergedFile.source_files.forEach(id => mergedAudioFileIds.add(id));
+          mergedFile.source_files.forEach((id) => mergedAudioFileIds.add(id));
         }
       });
-      
+
       // 全ての音声ファイルを取得
       const allAudioFiles = await this.audioFileModel.findAll(1000, 0);
-      
+
       // 未処理の音声ファイルIDを抽出
       const unprocessedAudioFileIds = allAudioFiles
-        .filter(file => file.id !== undefined && !mergedAudioFileIds.has(file.id))
-        .map(file => file.id as number);
-      
+        .filter((file) => file.id !== undefined && !mergedAudioFileIds.has(file.id))
+        .map((file) => file.id as number);
+
       if (unprocessedAudioFileIds.length === 0) {
         return {
           status: ProcessStatus.SKIPPED,
           message: "未処理の音声ファイルが見つかりませんでした。",
         };
       }
-      
+
       // 結合音声ファイル名の設定
       const timestamp = new Date().toISOString().slice(0, 10);
       const mergedName = name || `自動生成_${timestamp}`;
-      
+
       // 音声ファイルの結合
       return this.mergeAndSaveAudioFiles(unprocessedAudioFileIds, mergedName);
     } catch (error) {

@@ -5,7 +5,7 @@ import fs from "fs";
 import path from "path";
 import { promisify } from "util";
 import dotenv from "dotenv";
-import ffmpeg from 'fluent-ffmpeg';
+import ffmpeg from "fluent-ffmpeg";
 
 // 環境変数の読み込み
 dotenv.config();
@@ -135,7 +135,7 @@ export class GoogleCloudTTSService implements TTSService {
    */
   private splitTextIntoChunks(text: string, maxChunkLength = 5000): string[] {
     const chunks: string[] = [];
-    
+
     // テキストが最大チャンク長より短い場合はそのまま返す
     if (text.length <= maxChunkLength) {
       return [text];
@@ -154,7 +154,7 @@ export class GoogleCloudTTSService implements TTSService {
         if (currentChunk) {
           chunks.push(currentChunk);
         }
-        
+
         // 文が最大チャンク長より長い場合は分割
         if (sentence.length > maxChunkLength) {
           // 文字単位で分割
@@ -301,9 +301,9 @@ export class GoogleCloudTTSService implements TTSService {
           reject(new Error(`音声ファイルの長さ取得に失敗しました: ${err.message}`));
           return;
         }
-        
-        if (!metadata || !metadata.format || typeof metadata.format.duration !== 'number') {
-          reject(new Error('音声ファイルのメタデータの取得に失敗しました'));
+
+        if (!metadata || !metadata.format || typeof metadata.format.duration !== "number") {
+          reject(new Error("音声ファイルのメタデータの取得に失敗しました"));
           return;
         }
 
@@ -358,21 +358,29 @@ export class GoogleCloudTTSService implements TTSService {
 
       // 各ブックマークを処理
       console.log(unprocessedBookmarkIds);
-      
+
       for (const bookmarkId of unprocessedBookmarkIds) {
         try {
           const result = await this.generateAndSaveAudioFile(bookmarkId);
-          
+
           if (result.status === ProcessStatus.SUCCESS && result.data) {
             results.push(result.data);
           } else if (result.status === ProcessStatus.ERROR) {
             const bookmark = await this.bookmarkModel.findById(bookmarkId);
-            errors.push(`ブックマーク "${bookmark?.title || bookmarkId}" の処理に失敗しました: ${result.message}`);
+            errors.push(
+              `ブックマーク "${bookmark?.title || bookmarkId}" の処理に失敗しました: ${
+                result.message
+              }`
+            );
           }
         } catch (error) {
           if (error instanceof Error) {
             const bookmark = await this.bookmarkModel.findById(bookmarkId);
-            errors.push(`ブックマーク "${bookmark?.title || bookmarkId}" の処理に失敗しました: ${error.message}`);
+            errors.push(
+              `ブックマーク "${bookmark?.title || bookmarkId}" の処理に失敗しました: ${
+                error.message
+              }`
+            );
           }
         }
       }
@@ -382,7 +390,9 @@ export class GoogleCloudTTSService implements TTSService {
         return {
           status: ProcessStatus.SUCCESS,
           data: results,
-          message: `${results.length}件の音声ファイルを生成して保存しました。${errors.length > 0 ? `(${errors.length}件のエラーが発生しました)` : ""}`,
+          message: `${results.length}件の音声ファイルを生成して保存しました。${
+            errors.length > 0 ? `(${errors.length}件のエラーが発生しました)` : ""
+          }`,
         };
       } else if (errors.length > 0) {
         return {

@@ -28,17 +28,12 @@ export class ContentModel {
       ) VALUES (?, ?)
     `;
 
-    const params = [
-      content.bookmark_id,
-      content.raw_content,
-    ];
+    const params = [content.bookmark_id, content.raw_content];
 
     await this.db.run(sql, params);
 
     // 作成されたコンテンツのIDを取得
-    const result = await this.db.get<{ id: number }>(
-      "SELECT last_insert_rowid() as id"
-    );
+    const result = await this.db.get<{ id: number }>("SELECT last_insert_rowid() as id");
 
     return result?.id || 0;
   }

@@ -38,9 +38,7 @@ export class MergedAudioFileModel {
     await this.db.run(sql, params);
 
     // 作成された結合音声ファイルのIDを取得
-    const result = await this.db.get<{ id: number }>(
-      "SELECT last_insert_rowid() as id"
-    );
+    const result = await this.db.get<{ id: number }>("SELECT last_insert_rowid() as id");
 
     return result?.id || 0;
   }

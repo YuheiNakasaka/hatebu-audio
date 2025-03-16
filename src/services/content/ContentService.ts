@@ -99,7 +99,9 @@ export class WebContentService implements ContentService {
       const description = $('meta[name="description"]').attr("content") || "";
 
       // 不要な要素の削除
-      $("script, style, nav, footer, iframe, .ad, .advertisement, .banner, .social, .share, .comment").remove();
+      $(
+        "script, style, nav, footer, iframe, .ad, .advertisement, .banner, .social, .share, .comment"
+      ).remove();
 
       // 本文の抽出（優先度順に試行）
       let content = "";
@@ -266,7 +268,7 @@ export class WebContentService implements ContentService {
     try {
       // 未処理のブックマークを取得
       const unprocessedBookmarks = await this.bookmarkModel.findUnprocessed(limit);
-      
+
       if (unprocessedBookmarks.length === 0) {
         return {
           status: ProcessStatus.SKIPPED,
@@ -284,7 +286,7 @@ export class WebContentService implements ContentService {
 
         try {
           const result = await this.extractAndSaveContent(bookmark.id);
-          
+
           if (result.status === ProcessStatus.SUCCESS && result.data) {
             results.push(result.data);
           } else if (result.status === ProcessStatus.ERROR) {
@@ -302,7 +304,9 @@ export class WebContentService implements ContentService {
         return {
           status: ProcessStatus.SUCCESS,
           data: results,
-          message: `${results.length}件のコンテンツを抽出して保存しました。${errors.length > 0 ? `(${errors.length}件のエラーが発生しました)` : ""}`,
+          message: `${results.length}件のコンテンツを抽出して保存しました。${
+            errors.length > 0 ? `(${errors.length}件のエラーが発生しました)` : ""
+          }`,
         };
       } else if (errors.length > 0) {
         return {

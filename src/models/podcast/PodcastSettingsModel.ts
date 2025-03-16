@@ -25,32 +25,29 @@ export class PodcastSettingsModel {
    */
   async getSettings(): Promise<PodcastSettings | null> {
     return new Promise((resolve, reject) => {
-      this.db.get(
-        `SELECT * FROM podcast_settings ORDER BY id LIMIT 1`,
-        (err, row: any) => {
-          if (err) {
-            reject(err);
-          } else if (!row) {
-            resolve(null);
-          } else {
-            const settings: PodcastSettings = {
-              id: row.id,
-              title: row.title,
-              description: row.description,
-              author: row.author,
-              email: row.email,
-              language: row.language,
-              category: row.category,
-              explicit: row.explicit === 1,
-              image_url: row.image_url,
-              website_url: row.website_url,
-              feed_url: row.feed_url,
-              updated_at: row.updated_at,
-            };
-            resolve(settings);
-          }
+      this.db.get(`SELECT * FROM podcast_settings ORDER BY id LIMIT 1`, (err, row: any) => {
+        if (err) {
+          reject(err);
+        } else if (!row) {
+          resolve(null);
+        } else {
+          const settings: PodcastSettings = {
+            id: row.id,
+            title: row.title,
+            description: row.description,
+            author: row.author,
+            email: row.email,
+            language: row.language,
+            category: row.category,
+            explicit: row.explicit === 1,
+            image_url: row.image_url,
+            website_url: row.website_url,
+            feed_url: row.feed_url,
+            updated_at: row.updated_at,
+          };
+          resolve(settings);
         }
-      );
+      });
     });
   }
 
@@ -63,7 +60,7 @@ export class PodcastSettingsModel {
     return new Promise(async (resolve, reject) => {
       // 現在の設定を取得
       const currentSettings = await this.getSettings();
-      
+
       if (!currentSettings) {
         // 設定がまだ存在しない場合は作成
         this.db.run(

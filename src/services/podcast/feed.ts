@@ -94,7 +94,9 @@ export class PodcastFeedService {
         feed.addItem({
           title: episode.title,
           description: episode.description || "",
-          url: `${settings.website_url || process.env.PODCAST_WEBSITE_URL || ""}/episodes/${episode.id}`,
+          url: `${settings.website_url || process.env.PODCAST_WEBSITE_URL || ""}/episodes/${
+            episode.id
+          }`,
           guid: `episode-${episode.id}`,
           date: new Date(episode.published_at || new Date()),
           enclosure: {

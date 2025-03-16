@@ -28,17 +28,12 @@ export class NarrationModel {
       ) VALUES (?, ?)
     `;
 
-    const params = [
-      narration.bookmark_id,
-      narration.narration_text,
-    ];
+    const params = [narration.bookmark_id, narration.narration_text];
 
     await this.db.run(sql, params);
 
     // 作成されたナレーションのIDを取得
-    const result = await this.db.get<{ id: number }>(
-      "SELECT last_insert_rowid() as id"
-    );
+    const result = await this.db.get<{ id: number }>("SELECT last_insert_rowid() as id");
 
     return result?.id || 0;
   }

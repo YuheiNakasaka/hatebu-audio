@@ -20,7 +20,7 @@ export class DatabaseService {
    */
   private constructor(dbPath?: string) {
     this.dbPath = dbPath || process.env.DB_PATH || "./data/db/hatebu-audio.db";
-    
+
     // データベースディレクトリの確認と作成
     const dbDir = path.dirname(this.dbPath);
     if (!fs.existsSync(dbDir)) {
@@ -93,7 +93,7 @@ export class DatabaseService {
     }
 
     return new Promise((resolve, reject) => {
-      this.db!.run(sql, params, function(err) {
+      this.db!.run(sql, params, function (err) {
         if (err) {
           reject(new Error(`クエリ実行エラー: ${err.message}`));
         } else {
@@ -119,7 +119,7 @@ export class DatabaseService {
         if (err) {
           reject(new Error(`クエリ実行エラー: ${err.message}`));
         } else {
-          resolve(row as T || null);
+          resolve((row as T) || null);
         }
       });
     });

@@ -1,4 +1,4 @@
-declare module 'pdf-parse' {
+declare module "pdf-parse" {
   interface PDFInfo {
     PDFFormatVersion?: string;
     IsAcroFormPresent?: boolean;

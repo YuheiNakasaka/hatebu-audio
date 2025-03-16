@@ -107,7 +107,8 @@ const db = new sqlite3.Database(dbPath, (err) => {
     `);
 
     // Podcastシリーズ設定テーブル（新規追加）
-    db.run(`
+    db.run(
+      `
       CREATE TABLE IF NOT EXISTS podcast_settings (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL DEFAULT 'Yuhei Nakasakaのはてなブックマークラジオ',
@@ -122,23 +123,27 @@ const db = new sqlite3.Database(dbPath, (err) => {
         feed_url TEXT,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
-    `, (err) => {
-      if (err) {
-        console.error("Error creating tables:", err.message);
-        db.run("ROLLBACK;");
-        db.close();
-        process.exit(1);
-      } else {
-        // デフォルトのPodcast設定を挿入
-        db.get("SELECT COUNT(*) as count FROM podcast_settings", (err, row: { count: number }) => {
-          if (err) {
-            console.error("Error checking podcast settings:", err.message);
-            db.run("ROLLBACK;");
-            db.close();
-            process.exit(1);
-          } else if (row.count === 0) {
-            // 設定がまだ存在しない場合は挿入
-            db.run(`
+    `,
+      (err) => {
+        if (err) {
+          console.error("Error creating tables:", err.message);
+          db.run("ROLLBACK;");
+          db.close();
+          process.exit(1);
+        } else {
+          // デフォルトのPodcast設定を挿入
+          db.get(
+            "SELECT COUNT(*) as count FROM podcast_settings",
+            (err, row: { count: number }) => {
+              if (err) {
+                console.error("Error checking podcast settings:", err.message);
+                db.run("ROLLBACK;");
+                db.close();
+                process.exit(1);
+              } else if (row.count === 0) {
+                // 設定がまだ存在しない場合は挿入
+                db.run(
+                  `
               INSERT INTO podcast_settings (
                 title, description, author, language, category, explicit
               ) VALUES (
@@ -149,12 +154,33 @@ const db = new sqlite3.Database(dbPath, (err) => {
                 'Technology',
                 0
               );
-            `, (err) => {
-              if (err) {
-                console.error("Error inserting default podcast settings:", err.message);
-                db.run("ROLLBACK;");
-                db.close();
-                process.exit(1);
+            `,
+                  (err) => {
+                    if (err) {
+                      console.error("Error inserting default podcast settings:", err.message);
+                      db.run("ROLLBACK;");
+                      db.close();
+                      process.exit(1);
+                    } else {
+                      db.run("COMMIT;", (err) => {
+                        if (err) {
+                          console.error("Error committing transaction:", err.message);
+                        } else {
+                          console.log("Database schema created successfully");
+                        }
+
+                        // データベース接続のクローズ
+                        db.close((err) => {
+                          if (err) {
+                            console.error("Error closing database:", err.message);
+                          } else {
+                            console.log("Database connection closed");
+                          }
+                        });
+                      });
+                    }
+                  }
+                );
               } else {
                 db.run("COMMIT;", (err) => {
                   if (err) {
@@ -162,7 +188,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
                   } else {
                     console.log("Database schema created successfully");
                   }
-                  
+
                   // データベース接続のクローズ
                   db.close((err) => {
                     if (err) {
@@ -173,27 +199,10 @@ const db = new sqlite3.Database(dbPath, (err) => {
                   });
                 });
               }
-            });
-          } else {
-            db.run("COMMIT;", (err) => {
-              if (err) {
-                console.error("Error committing transaction:", err.message);
-              } else {
-                console.log("Database schema created successfully");
-              }
-              
-              // データベース接続のクローズ
-              db.close((err) => {
-                if (err) {
-                  console.error("Error closing database:", err.message);
-                } else {
-                  console.log("Database connection closed");
-                }
-              });
-            });
-          }
-        });
+            }
+          );
+        }
       }
-    });
+    );
   });
 });
