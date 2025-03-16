@@ -52,7 +52,7 @@ export default function Episode({ episode, settings }: EpisodeProps) {
         
         <div className={styles.description}>
           <h2>概要</h2>
-          <p>{episode.description}</p>
+          <p dangerouslySetInnerHTML={{ __html: episode.description || '' }} />
         </div>
         
         <Link href="/" className={styles.backLink}>

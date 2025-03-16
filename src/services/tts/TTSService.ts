@@ -5,6 +5,7 @@ import fs from "fs";
 import path from "path";
 import { promisify } from "util";
 import dotenv from "dotenv";
+import ffmpeg from 'fluent-ffmpeg';
 
 // 環境変数の読み込み
 dotenv.config();
@@ -38,6 +39,12 @@ export interface TTSService {
    * @returns 処理結果
    */
   processUnprocessedNarrations(limit?: number): Promise<ProcessResult<AudioFile[]>>;
+
+  /**
+   * 既存の音声ファイルのdurationを全て更新
+   * @returns 処理結果
+   */
+  updateAllAudioFileDurations(): Promise<ProcessResult<AudioFile[]>>;
 }
 
 /**
@@ -97,7 +104,7 @@ export class GoogleCloudTTSService implements TTSService {
           },
           audioConfig: {
             audioEncoding: "MP3",
-            speakingRate: 1.2,
+            speakingRate: 1.0,
             pitch: 0.0,
           },
         });
@@ -173,6 +180,43 @@ export class GoogleCloudTTSService implements TTSService {
   }
 
   /**
+   * 音声ファイルの長さを秒単位で取得し、durationを更新
+   */
+  async updateAllAudioFileDurations(): Promise<ProcessResult<AudioFile[]>> {
+    try {
+      const audioFiles = await this.audioFileModel.findAll();
+      const results: AudioFile[] = [];
+
+      for (const audioFile of audioFiles) {
+        const duration = await this.getAudioDurationInSeconds(audioFile.file_path);
+        audioFile.duration = duration;
+        results.push(audioFile);
+      }
+
+      for (const audioFile of results) {
+        if (audioFile.id) {
+          console.info(`更新中: ${audioFile.id} ${audioFile.file_path} ${audioFile.duration}秒`);
+          await this.audioFileModel.update(audioFile.id, { duration: audioFile.duration });
+        }
+      }
+
+      return {
+        status: ProcessStatus.SUCCESS,
+        data: results,
+        message: `${results.length}件の音声ファイルのdurationを更新しました。`,
+      };
+    } catch (error) {
+      if (error instanceof Error) {
+        return {
+          status: ProcessStatus.ERROR,
+          message: `音声ファイルのdurationの更新に失敗しました: ${error.message}`,
+        };
+      }
+      throw error;
+    }
+  }
+
+  /**
    * ブックマークIDから音声ファイルを生成して保存
    * @param bookmarkId ブックマークID
    * @returns 処理結果
@@ -215,11 +259,14 @@ export class GoogleCloudTTSService implements TTSService {
       // 音声ファイルの生成
       await this.synthesizeSpeech(narration.narration_text, outputPath);
 
+      // 音声ファイルの長さを取得
+      const duration = await this.getAudioDurationInSeconds(outputPath);
+
       // 音声ファイル情報の保存
       const audioFile: AudioFile = {
         bookmark_id: bookmarkId,
         file_path: outputPath,
-        // 音声の長さは現在は設定しない（将来的に実装）
+        duration: duration,
       };
 
       const audioFileId = await this.audioFileModel.create(audioFile);
@@ -240,6 +287,29 @@ export class GoogleCloudTTSService implements TTSService {
       }
       throw error;
     }
+  }
+
+  /**
+   * 音声ファイルの長さを秒単位で取得
+   * @param filePath 音声ファイルのパス
+   * @returns 音声の長さ（秒）
+   */
+  async getAudioDurationInSeconds(filePath: string): Promise<number> {
+    return new Promise((resolve, reject) => {
+      ffmpeg.ffprobe(filePath, (err, metadata) => {
+        if (err) {
+          reject(new Error(`音声ファイルの長さ取得に失敗しました: ${err.message}`));
+          return;
+        }
+        
+        if (!metadata || !metadata.format || typeof metadata.format.duration !== 'number') {
+          reject(new Error('音声ファイルのメタデータの取得に失敗しました'));
+          return;
+        }
+
+        resolve(metadata.format.duration);
+      });
+    });
   }
 
   /**

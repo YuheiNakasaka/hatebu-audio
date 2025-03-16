@@ -1,7 +1,7 @@
 import { OpenAI } from "openai";
 import dotenv from "dotenv";
 import { ProcessResult, ProcessStatus, Bookmark, PodcastEpisode } from "../../types";
-import { BookmarkModel, MergedAudioFileModel, PodcastEpisodeModel } from "../../models";
+import { BookmarkModel, MergedAudioFileModel, PodcastEpisodeModel, AudioFileModel } from "../../models";
 import fs from "fs";
 import { getAudioDurationInSeconds } from "get-audio-duration";
 
@@ -16,7 +16,7 @@ export class PodcastMetadataService {
   private bookmarkModel: BookmarkModel;
   private mergedAudioFileModel: MergedAudioFileModel;
   private podcastEpisodeModel: PodcastEpisodeModel;
-
+  private audioFileModel: AudioFileModel;
   /**
    * コンストラクタ
    */
@@ -32,6 +32,7 @@ export class PodcastMetadataService {
     this.bookmarkModel = new BookmarkModel();
     this.mergedAudioFileModel = new MergedAudioFileModel();
     this.podcastEpisodeModel = new PodcastEpisodeModel();
+    this.audioFileModel = new AudioFileModel();
   }
 
   /**
@@ -141,45 +142,40 @@ export class PodcastMetadataService {
     try {
       // ブックマーク情報の文字列を作成
       const bookmarkInfo = bookmarks
-        .map((bookmark) => `${bookmark.title}`)
-        .join("\n\n");
+        .map((bookmark) => `- ${bookmark.title}`)
+        .join("\n");
 
       // プロンプトの作成
       const prompt = `
-以下のブックマーク情報から、Podcastエピソードのタイトルと説明文を日本語で生成してください。
-タイトルは簡潔で魅力的なものにし、説明文はエピソードの内容を要約したものにしてください。
+今週のPodcastのエピソードのタイトルを作成したいです。エピソードでは以下の各ブックマーク記事の内容を要約&批評しています。ブックマーク記事のタイトルから総合的に抽象的に判断してエピソードのタイトルとして適したものを日本語で生成してください。
+タイトルは簡潔で魅力的なものにしてください。
 
 タイトル形式: 「#${episodeNumber}: [タイトル]」
-説明形式: 「[タイトル]では、[説明文]」
 
-ブックマーク情報:
+ブックマーク記事のタイトル:
 ${bookmarkInfo}
 
 以下の形式で回答してください：
 タイトル: [生成されたタイトル]
-説明: [生成された説明文]
 `;
 
       // OpenAI APIを使用してタイトルと説明を生成
       const response = await this.openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.7,
-        max_completion_tokens: 2000,
+        temperature: 0.9,
+        max_completion_tokens: 500,
       });
 
       // レスポンスからタイトルと説明を抽出
       const content = response.choices[0]?.message?.content || "";
-      console.info(content);
       const titleMatch = content.match(/タイトル: (.+)/);
-      const descriptionMatch = content.match(/説明: ([\s\S]+)/);
 
+      // AudioFileのdurationを使って各ブックマークの紹介が開始する部分へのタイムスタンプをまとめたものを説明とする
       const title = titleMatch
         ? titleMatch[1]
         : `#${episodeNumber}: ${bookmarks[0]?.title || "新着ブックマーク"}`;
-      const description = descriptionMatch
-        ? descriptionMatch[1]
-        : `このエピソードでは、${bookmarks.length}件のブックマークを紹介します。`;
+      const description = await this.generateDescription(bookmarks);
 
       return { title, description };
     } catch (error) {
@@ -191,4 +187,34 @@ ${bookmarkInfo}
       };
     }
   }
+
+  /**
+   * ブックマーク情報から説明を生成
+   * @param bookmarks ブックマーク情報の配列
+   * @returns 説明
+   */
+  async generateDescription(bookmarks: Bookmark[]): Promise<string> {
+    const introDuration = 6;
+    let totalDuration = introDuration;
+    const audioFiles = await Promise.all(bookmarks.map(async (bookmark) => {
+      const audioFile = await this.audioFileModel.findByBookmarkId(bookmark.id as number);
+      return audioFile;
+    }));
+
+    let descriptions: string[] = [];
+    for (const audioFile of audioFiles.sort((a, b) => (a?.id as number) - (b?.id as number))) {
+      const bookmark = await this.bookmarkModel.findById(audioFile?.bookmark_id as number);
+      descriptions.push(`${this.formatDuration(totalDuration)} ${bookmark?.title}`);
+      totalDuration += audioFile?.duration || 0;
+    }
+    return descriptions.join("\n\n");
+  }
+
+  private formatDuration(duration: number): string {
+    const hours = `00${Math.floor(duration / 3600)}`.slice(-2);
+    const minutes = `00${Math.floor((duration % 3600) / 60)}`.slice(-2);
+    const seconds = `00${Math.floor(duration % 60)}`.slice(-2);
+    return `${hours}:${minutes}:${seconds}`;
+  }
+
 }

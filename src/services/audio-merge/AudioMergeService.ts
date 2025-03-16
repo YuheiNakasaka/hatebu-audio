@@ -131,7 +131,7 @@ export class DefaultAudioMergeService implements AudioMergeService {
       }
 
       // 既存の結合音声ファイル情報を取得
-      const mergedAudioFiles = await this.mergedAudioFileModel.findAll(1000, 0);
+      const mergedAudioFiles = await this.mergedAudioFileModel.findAll(100000, 0);
       
       // 既に結合済みの音声ファイルIDのセットを作成
       const mergedAudioFileIds = new Set<number>();
@@ -142,7 +142,7 @@ export class DefaultAudioMergeService implements AudioMergeService {
       });
       
       // 全ての音声ファイルを取得
-      const allAudioFiles = await this.audioFileModel.findAll(1000, 0);
+      const allAudioFiles = await this.audioFileModel.findAll(100000, 0);
       
       // 未処理の音声ファイルIDを抽出
       const unprocessedAudioFileIds = allAudioFiles
@@ -170,7 +170,7 @@ export class DefaultAudioMergeService implements AudioMergeService {
       }
 
       // 入力ファイルパスの配列を作成
-      const inputFiles = audioFiles.map(file => file.file_path);
+      const inputFiles = audioFiles.sort((a, b) => (a.id as number) - (b.id as number)).map(file => file.file_path);
 
       // 出力ファイル名の生成
       const timestamp = new Date().toISOString().replace(/[:.]/g, "-");

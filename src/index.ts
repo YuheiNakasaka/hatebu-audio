@@ -570,6 +570,27 @@ program
     }
   });
 
+// 既存の音声ファイルのdurationを全て更新するコマンド
+program
+  .command("update-audio-file-durations")
+  .description("既存の音声ファイルのdurationを全て更新")
+  .action(async () => {
+    const spinner = ora("音声ファイルのdurationを更新中...").start();
+    try {
+      const result = await ttsService.updateAllAudioFileDurations();
+      spinner.stop();
+      
+      if (result.status === ProcessStatus.SUCCESS) {
+        console.log(chalk.green(`✓ ${result.message}`));
+      } else {
+        console.log(chalk.red(`✗ ${result.message}`));
+      }
+    } catch (error) {
+      spinner.stop();
+      console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
+    }
+  });
+
 // エピソードメタデータ更新コマンド
 program
   .command("update-episode-metadata")
@@ -655,69 +676,69 @@ program
       console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
       return;
     }
-    
-    // RSSフィード生成
-    console.log(chalk.blue("\n2. RSSフィードの生成"));
-    const spinner2 = ora("RSSフィードを生成中...").start();
+        
+    // Webサイトビルド
+    console.log(chalk.blue("\n2. Webサイトのビルド"));
+    const spinner2 = ora("Webサイトをビルド中...").start();
     
     try {
-      const result2 = await podcastService.generateAndDeployFeed();
+      const result2 = await podcastService.buildWebsite();
       
       spinner2.stop();
       
       if (result2.status === ProcessStatus.SUCCESS) {
         console.log(chalk.green(`✓ ${result2.message}`));
         if (result2.data) {
-          console.log(chalk.gray(`  フィードURL: ${result2.data}`));
+          console.log(chalk.gray(`  ビルド出力ディレクトリ: ${result2.data}`));
         }
-      } else if (result2.status === ProcessStatus.SKIPPED) {
-        console.log(chalk.yellow(`⚠ ${result2.message}`));
       } else {
         console.log(chalk.red(`✗ ${result2.message}`));
+        return;
       }
     } catch (error) {
       spinner2.stop();
       console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
+      return;
     }
     
-    // Webサイトビルド
-    console.log(chalk.blue("\n3. Webサイトのビルド"));
-    const spinner3 = ora("Webサイトをビルド中...").start();
+    // Webサイトデプロイ
+    console.log(chalk.blue("\n3. Webサイトのデプロイ"));
+    const spinner3 = ora("Webサイトをデプロイ中...").start();
     
     try {
-      const result3 = await podcastService.buildWebsite();
+      const result3 = await podcastService.deployWebsite();
       
       spinner3.stop();
       
       if (result3.status === ProcessStatus.SUCCESS) {
         console.log(chalk.green(`✓ ${result3.message}`));
         if (result3.data) {
-          console.log(chalk.gray(`  ビルド出力ディレクトリ: ${result3.data}`));
+          console.log(chalk.gray(`  WebサイトURL: ${result3.data}`));
         }
       } else {
         console.log(chalk.red(`✗ ${result3.message}`));
-        return;
       }
     } catch (error) {
       spinner3.stop();
       console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
-      return;
     }
-    
-    // Webサイトデプロイ
-    console.log(chalk.blue("\n4. Webサイトのデプロイ"));
-    const spinner4 = ora("Webサイトをデプロイ中...").start();
+
+    // RSSフィード生成
+    console.log(chalk.blue("\n4. RSSフィードの生成"));
+    const spinner4 = ora("RSSフィードを生成中...").start();
     
     try {
-      const result4 = await podcastService.deployWebsite();
+      const result4 = await podcastService.generateAndDeployFeed();
       
       spinner4.stop();
       
       if (result4.status === ProcessStatus.SUCCESS) {
         console.log(chalk.green(`✓ ${result4.message}`));
         if (result4.data) {
-          console.log(chalk.gray(`  WebサイトURL: ${result4.data}`));
+          console.log(chalk.gray(`  フィードURL: ${result4.data}`));
         }
+      } else if (result4.status === ProcessStatus.SKIPPED) {
+        console.log(chalk.yellow(`⚠ ${result4.message}`));
       } else {
         console.log(chalk.red(`✗ ${result4.message}`));
       }
