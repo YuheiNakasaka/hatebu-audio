@@ -233,7 +233,7 @@ program
   .command("process-all")
   .description("ブックマーク取得から音声ファイル生成までの全処理を実行")
   .option("-u, --username <username>", "はてなユーザー名")
-  .option("-l, --limit <number>", "処理する最大件数", "5")
+  .option("-l, --limit <number>", "処理する最大件数", "20")
   .action(async (options) => {
     console.log(chalk.blue("=== はてなブックマーク音声化処理開始 ==="));
     

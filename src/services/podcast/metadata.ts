@@ -161,10 +161,10 @@ ${bookmarkInfo}
 
       // OpenAI APIを使用してタイトルと説明を生成
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: "gpt-4o",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.7,
-        max_tokens: 500,
+        max_completion_tokens: 600,
       });
 
       // レスポンスからタイトルと説明を抽出
