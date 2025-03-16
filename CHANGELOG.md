@@ -6,6 +6,14 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- エピソードメタデータ更新機能の追加
+  - 指定したエピソードIDのタイトルと説明文を再生成する機能
+  - `update-episode-metadata`コマンドの実装
+  - エピソードに関連するブックマーク情報を使ってAIでタイトルと説明文を生成
+  - 既存のエピソードメタデータを更新する機能
+
+### Added
+
 - AudioPlayerコンポーネントに倍速再生機能を追加
   - カスタムオーディオプレイヤーに再生速度変更機能を実装
   - 0.5x, 0.75x, 1.0x, 1.25x, 1.5x, 2.0xの再生速度選択ボタンを追加

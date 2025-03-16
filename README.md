@@ -124,6 +124,9 @@ npm run dev -- publish-episode --file-id=1 --auto-metadata
 # メタデータを手動で指定する場合
 npm run dev -- publish-episode --file-id=1 --title="エピソードタイトル" --description="説明文"
 
+# 指定したエピソードのタイトルと説明文を再生成して更新
+npm run dev -- update-episode-metadata --id=1
+
 # Podcastの設定を更新
 npm run dev -- update-podcast-settings
 

@@ -134,14 +134,14 @@ export class PodcastMetadataService {
    * @param episodeNumber エピソード番号
    * @returns タイトルと説明
    */
-  private async generateTitleAndDescription(
+  async generateTitleAndDescription(
     bookmarks: Bookmark[],
     episodeNumber: number
   ): Promise<{ title: string; description: string }> {
     try {
       // ブックマーク情報の文字列を作成
       const bookmarkInfo = bookmarks
-        .map((bookmark) => `タイトル: ${bookmark.title}\n説明: ${bookmark.description || "なし"}`)
+        .map((bookmark) => `${bookmark.title}`)
         .join("\n\n");
 
       // プロンプトの作成
@@ -150,6 +150,7 @@ export class PodcastMetadataService {
 タイトルは簡潔で魅力的なものにし、説明文はエピソードの内容を要約したものにしてください。
 
 タイトル形式: 「#${episodeNumber}: [タイトル]」
+説明形式: 「[タイトル]では、[説明文]」
 
 ブックマーク情報:
 ${bookmarkInfo}
@@ -161,14 +162,15 @@ ${bookmarkInfo}
 
       // OpenAI APIを使用してタイトルと説明を生成
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.7,
-        max_completion_tokens: 600,
+        max_completion_tokens: 2000,
       });
 
       // レスポンスからタイトルと説明を抽出
       const content = response.choices[0]?.message?.content || "";
+      console.info(content);
       const titleMatch = content.match(/タイトル: (.+)/);
       const descriptionMatch = content.match(/説明: ([\s\S]+)/);
 

@@ -8,6 +8,7 @@ import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
 import { execSync } from "child_process";
+import { BookmarkModel } from "../../models";
 
 // 環境変数の読み込み
 dotenv.config();
@@ -320,6 +321,118 @@ export class PodcastService {
         return {
           status: ProcessStatus.ERROR,
           message: `Webサイトのビルドに失敗しました: ${error.message}`,
+          error,
+        };
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * エピソードの情報を取得
+   * @param episodeId エピソードID
+   * @returns 処理結果
+   */
+  async getEpisodeById(episodeId: number): Promise<ProcessResult<PodcastEpisode>> {
+    try {
+      const episode = await this.podcastEpisodeModel.findById(episodeId);
+      if (!episode) {
+        return {
+          status: ProcessStatus.ERROR,
+          message: `エピソードが見つかりません: ID ${episodeId}`,
+        };
+      }
+
+      return {
+        status: ProcessStatus.SUCCESS,
+        message: `エピソード情報を取得しました: ${episode.title}`,
+        data: episode,
+      };
+    } catch (error) {
+      if (error instanceof Error) {
+        return {
+          status: ProcessStatus.ERROR,
+          message: `エピソード情報の取得に失敗しました: ${error.message}`,
+          error,
+        };
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * エピソードメタデータを更新
+   * @param episodeId エピソードID
+   * @returns 処理結果
+   */
+  async updateEpisodeMetadata(episodeId: number): Promise<ProcessResult<PodcastEpisode>> {
+    try {
+      // エピソードの取得
+      const episode = await this.podcastEpisodeModel.findById(episodeId);
+      if (!episode) {
+        return {
+          status: ProcessStatus.ERROR,
+          message: `エピソードが見つかりません: ID ${episodeId}`,
+        };
+      }
+
+      // source_bookmarksからブックマーク情報を取得
+      if (!episode.source_bookmarks || episode.source_bookmarks.length === 0) {
+        return {
+          status: ProcessStatus.ERROR,
+          message: `エピソードにブックマーク情報がありません: ID ${episodeId}`,
+        };
+      }
+
+      const bookmarkModel = new BookmarkModel();
+      const bookmarks = [];
+
+      for (const bookmarkId of episode.source_bookmarks) {
+        const bookmark = await bookmarkModel.findById(bookmarkId);
+        if (bookmark) {
+          bookmarks.push(bookmark);
+        }
+      }
+
+      if (bookmarks.length === 0) {
+        return {
+          status: ProcessStatus.ERROR,
+          message: `エピソードに関連するブックマークが見つかりません: ID ${episodeId}`,
+        };
+      }
+
+      // タイトルと説明を生成
+      const episodeNumber = episode.id || await this.podcastEpisodeModel.getLatestEpisodeNumber();
+      const { title, description } = await this.metadataService.generateTitleAndDescription(
+        bookmarks,
+        episodeNumber
+      );
+
+      // エピソード情報を更新
+      await this.podcastEpisodeModel.update(episodeId, {
+        title,
+        description,
+      });
+
+      // 更新されたエピソード情報を取得
+      const updatedEpisode = await this.podcastEpisodeModel.findById(episodeId);
+      if (!updatedEpisode) {
+        return {
+          status: ProcessStatus.ERROR,
+          message: `更新後のエピソード情報の取得に失敗しました: ID ${episodeId}`,
+        };
+      }
+
+      return {
+        status: ProcessStatus.SUCCESS,
+        message: `エピソードメタデータを更新しました: ${updatedEpisode.title}`,
+        data: updatedEpisode,
+      };
+    } catch (error) {
+      if (error instanceof Error) {
+        return {
+          status: ProcessStatus.ERROR,
+          message: `エピソードメタデータの更新に失敗しました: ${error.message}`,
           error,
         };
       }

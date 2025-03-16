@@ -570,6 +570,47 @@ program
     }
   });
 
+// エピソードメタデータ更新コマンド
+program
+  .command("update-episode-metadata")
+  .description("指定したエピソードのタイトルと説明文を再生成して更新")
+  .requiredOption("-i, --id <id>", "エピソードID")
+  .action(async (options) => {
+    const spinner = ora("エピソードのメタデータを更新中...").start();
+    
+    try {
+      const episodeId = parseInt(options.id);
+      
+      // 更新前のエピソード情報を取得
+      const episodeResult = await podcastService.getEpisodeById(episodeId);
+      const oldTitle = episodeResult.status === ProcessStatus.SUCCESS && episodeResult.data 
+        ? episodeResult.data.title 
+        : "不明";
+      
+      // エピソードのタイトルと説明を更新
+      const result = await podcastService.updateEpisodeMetadata(episodeId);
+      
+      spinner.stop();
+      
+      if (result.status === ProcessStatus.SUCCESS) {
+        console.log(chalk.green(`✓ ${result.message}`));
+        if (result.data) {
+          console.log(chalk.gray(`  更新前タイトル: ${oldTitle}`));
+          console.log(chalk.gray(`  更新後タイトル: ${result.data.title}`));
+          if (result.data.description) {
+            const previewLength = Math.min(100, result.data.description.length);
+            console.log(chalk.gray(`  更新後説明文: ${result.data.description.substring(0, previewLength)}${previewLength < result.data.description.length ? '...' : ''}`));
+          }
+        }
+      } else {
+        console.log(chalk.red(`✗ ${result.message}`));
+      }
+    } catch (error) {
+      spinner.stop();
+      console.error(chalk.red(`エラー: ${error instanceof Error ? error.message : String(error)}`));
+    }
+  });
+
 // Podcast公開コマンド（音声ファイルのアップロード、RSSフィード生成、Webサイトデプロイを一括実行）
 program
   .command("publish-podcast")
