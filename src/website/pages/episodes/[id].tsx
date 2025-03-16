@@ -1,7 +1,8 @@
 import { GetStaticPaths, GetStaticProps } from 'next';
 import Link from 'next/link';
+import { useRef } from 'react';
 import Layout from '../../components/Layout';
-import AudioPlayer from '../../components/AudioPlayer';
+import AudioPlayer, { AudioPlayerHandle } from '../../components/AudioPlayer';
 import styles from '../../styles/Episode.module.css';
 import { PodcastEpisode, PodcastSettings } from '../../../types';
 import {
@@ -17,6 +18,7 @@ interface EpisodeProps {
 }
 
 export default function Episode({ episode, settings }: EpisodeProps) {
+  const audioPlayerRef = useRef<AudioPlayerHandle>(null);
   if (!episode) {
     return (
       <Layout title="エピソードが見つかりません" description="エピソードが見つかりません">
@@ -40,6 +42,32 @@ export default function Episode({ episode, settings }: EpisodeProps) {
     });
   };
 
+  // タイムコードを検出してクリック可能なリンクに変換する関数
+  const convertTimecodesToLinks = (text: string): string => {
+    if (!text) return '';
+    
+    // HH:MM:SS または MM:SS 形式のタイムコードを検出する正規表現
+    const timecodeRegex = /(\d{2}:\d{2}:\d{2}|\d{2}:\d{2})\s+(.*?)(?=\n\n|\n\d{2}:\d{2}|\n\d{2}:\d{2}:\d{2}|$)/g;
+    
+    return text.replace(timecodeRegex, (match, timecode, title) => {
+      return `<a href="#" class="${styles.timecodeLink}" data-timecode="${timecode}">${timecode}</a> ${title}`;
+    });
+  };
+  
+  // タイムコードリンクのクリックイベントハンドラ
+  const handleTimecodeClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    
+    if (target.classList.contains(styles.timecodeLink)) {
+      e.preventDefault();
+      const timecode = target.getAttribute('data-timecode');
+      
+      if (timecode && audioPlayerRef.current) {
+        audioPlayerRef.current.seekToTime(timecode);
+      }
+    }
+  };
+
   return (
     <Layout title={`${episode.title} - ${settings.title}`} description={episode.description}>
       <div className={styles.container}>
@@ -48,11 +76,14 @@ export default function Episode({ episode, settings }: EpisodeProps) {
           {formatDate(episode.published_at)}
         </span>
         
-        <AudioPlayer audioUrl={episode.storage_url} />
+        <AudioPlayer ref={audioPlayerRef} audioUrl={episode.storage_url} />
         
         <div className={styles.description}>
           <h2>概要</h2>
-          <p dangerouslySetInnerHTML={{ __html: episode.description || '' }} />
+          <div 
+            onClick={handleTimecodeClick}
+            dangerouslySetInnerHTML={{ __html: convertTimecodesToLinks(episode.description || '') }} 
+          />
         </div>
         
         <Link href="/" className={styles.backLink}>

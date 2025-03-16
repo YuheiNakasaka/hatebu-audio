@@ -6,6 +6,14 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- タイムコードジャンプ機能の追加
+  - エピソード概要に含まれるタイムコード（00:00:00形式）をクリックすると該当部分にジャンプする機能
+  - AudioPlayerコンポーネントに特定時間位置への移動機能を実装
+  - タイムコードを自動検出してクリック可能なリンクに変換する機能
+  - クリック時に該当部分から再生を開始する機能
+
+### Added
+
 - エピソードメタデータ更新機能の追加
   - 指定したエピソードIDのタイトルと説明文を再生成する機能
   - `update-episode-metadata`コマンドの実装

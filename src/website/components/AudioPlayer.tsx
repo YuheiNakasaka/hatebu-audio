@@ -1,11 +1,16 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import styles from '../styles/AudioPlayer.module.css';
+
+export interface AudioPlayerHandle {
+  seekToTime: (timeString: string) => void;
+}
 
 interface AudioPlayerProps {
   audioUrl?: string;
+  onTimeUpdate?: (time: number) => void;
 }
 
-const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl }) => {
+const AudioPlayer = forwardRef<AudioPlayerHandle, AudioPlayerProps>(({ audioUrl, onTimeUpdate }, ref) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -16,7 +21,12 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl }) => {
     const audio = audioRef.current;
     if (!audio || !audioUrl) return;
 
-    const updateTime = () => setCurrentTime(audio.currentTime);
+    const updateTime = () => {
+      setCurrentTime(audio.currentTime);
+      if (onTimeUpdate) {
+        onTimeUpdate(audio.currentTime);
+      }
+    };
     const updateDuration = () => setDuration(audio.duration);
     const handleEnded = () => setIsPlaying(false);
 
@@ -29,7 +39,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl }) => {
       audio.removeEventListener('loadedmetadata', updateDuration);
       audio.removeEventListener('ended', handleEnded);
     };
-  }, [audioUrl]);
+  }, [audioUrl, onTimeUpdate]);
 
   const togglePlay = () => {
     const audio = audioRef.current;
@@ -65,6 +75,38 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl }) => {
     audio.currentTime = newTime;
     setCurrentTime(newTime);
   };
+
+  // 特定の時間位置に移動するメソッド
+  const seekToTime = (timeString: string) => {
+    const audio = audioRef.current;
+    if (!audio || !audioUrl) return;
+    
+    // "00:00:00" または "00:00" 形式の時間文字列をパース
+    const parts = timeString.split(':').map(part => parseInt(part, 10));
+    let seconds = 0;
+    
+    if (parts.length === 3) {
+      // 時:分:秒形式
+      seconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+    } else if (parts.length === 2) {
+      // 分:秒形式
+      seconds = parts[0] * 60 + parts[1];
+    }
+    
+    if (seconds >= 0 && seconds <= audio.duration) {
+      audio.currentTime = seconds;
+      setCurrentTime(seconds);
+      if (!isPlaying) {
+        audio.play();
+        setIsPlaying(true);
+      }
+    }
+  };
+  
+  // AudioPlayerの参照を外部に公開
+  useImperativeHandle(ref, () => ({
+    seekToTime
+  }));
 
   if (!audioUrl) {
     return (
@@ -113,6 +155,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl }) => {
       </div>
     </div>
   );
-};
+});
 
 export default AudioPlayer;

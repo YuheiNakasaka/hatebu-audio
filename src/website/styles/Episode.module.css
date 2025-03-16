@@ -44,6 +44,19 @@
   text-decoration: underline;
 }
 
+.timecodeLink {
+  color: var(--primary-color);
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.timecodeLink:hover {
+  text-decoration: underline;
+  color: var(--secondary-color);
+}
+
 @media (max-width: 768px) {
   .container {
     padding: 1rem;

@@ -195,17 +195,17 @@ ${bookmarkInfo}
    */
   async generateDescription(bookmarks: Bookmark[]): Promise<string> {
     const introDuration = 6;
-    let totalDuration = introDuration;
+    const silenceDuration = 1.3
     const audioFiles = await Promise.all(bookmarks.map(async (bookmark) => {
       const audioFile = await this.audioFileModel.findByBookmarkId(bookmark.id as number);
       return audioFile;
     }));
-
+    let totalDuration = introDuration + silenceDuration;
     let descriptions: string[] = [];
     for (const audioFile of audioFiles.sort((a, b) => (a?.id as number) - (b?.id as number))) {
       const bookmark = await this.bookmarkModel.findById(audioFile?.bookmark_id as number);
       descriptions.push(`${this.formatDuration(totalDuration)} ${bookmark?.title}`);
-      totalDuration += audioFile?.duration || 0;
+      totalDuration += (audioFile?.duration || 0) + silenceDuration;
     }
     return descriptions.join("\n\n");
   }
