@@ -87,7 +87,7 @@ export class WebContentService implements ContentService {
       // HTMLの取得
       const response = await axios.get(url, {
         headers: {
-          "User-Agent": "Mozilla/5.0 (compatible; HatebuAudioBot/1.0)",
+          "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3864.0 Safari/537.36",
         },
       });
 
@@ -285,6 +285,7 @@ export class WebContentService implements ContentService {
         if (!bookmark.id) continue;
 
         try {
+          console.info(`ブックマーク ${bookmark.id} - "${bookmark.title}" の処理を開始します...`);
           const result = await this.extractAndSaveContent(bookmark.id);
 
           if (result.status === ProcessStatus.SUCCESS && result.data) {

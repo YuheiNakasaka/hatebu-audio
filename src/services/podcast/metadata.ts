@@ -95,7 +95,7 @@ export class PodcastMetadataService {
       }
 
       // エピソード番号を取得
-      const episodeNumber = (await this.podcastEpisodeModel.getLatestEpisodeNumber()) + 1;
+      const episodeNumber = (await this.podcastEpisodeModel.getLatestEpisodeNumber());
 
       // タイトルと説明を生成
       const { title, description } = await this.generateTitleAndDescription(
@@ -211,7 +211,7 @@ ${bookmarkInfo}
     let descriptions: string[] = [];
     for (const audioFile of audioFiles.sort((a, b) => (a?.id as number) - (b?.id as number))) {
       const bookmark = await this.bookmarkModel.findById(audioFile?.bookmark_id as number);
-      descriptions.push(`${this.formatDuration(totalDuration)} ${bookmark?.title}`);
+      descriptions.push(`${this.formatDuration(totalDuration)} ${bookmark?.title}\n${bookmark?.url}`);
       totalDuration += (audioFile?.duration || 0) + silenceDuration;
     }
     return descriptions.join("\n\n");

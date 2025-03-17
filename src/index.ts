@@ -355,7 +355,7 @@ program
       }
 
       if (!fs.existsSync(outroFilePath)) {
-        const outroText = `以上で今回のはてなブックマークラジオを終わります。お聴きいただきありがとうございました。それではまた次回をお楽しみに！`;
+        const outroText = `以上で今回のはてなブックマークラジオを終わります。ShowNoteには今回紹介した記事のURLを載せていますのでぜひご覧ください。最後までお聴きいただきありがとうございました。それではまた次回をお楽しみに！`;
         await ttsService.synthesizeSpeech(outroText, outroFilePath);
       }
 
