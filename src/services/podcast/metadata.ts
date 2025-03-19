@@ -155,7 +155,7 @@ export class PodcastMetadataService {
 今週のPodcastのエピソードのタイトルを作成したいです。エピソードでは以下の各ブックマーク記事の内容を要約&批評しています。ブックマーク記事のタイトルから総合的に抽象的に判断してエピソードのタイトルとして適したものを日本語で生成してください。
 タイトルは簡潔で魅力的なものにしてください。
 
-タイトル形式: 「#${episodeNumber}: [タイトル]」
+タイトル形式: 「[タイトル]」
 
 ブックマーク記事のタイトル:
 ${bookmarkInfo}
@@ -178,8 +178,8 @@ ${bookmarkInfo}
 
       // AudioFileのdurationを使って各ブックマークの紹介が開始する部分へのタイムスタンプをまとめたものを説明とする
       const title = titleMatch
-        ? titleMatch[1]
-        : `#${episodeNumber}: ${bookmarks[0]?.title || "新着ブックマーク"}`;
+        ? titleMatch[1].replace(/[\[\]「」]/g, "")
+        : `${bookmarks[0]?.title || "新着ブックマーク"}`;
       const description = await this.generateDescription(bookmarks);
 
       return { title, description };
@@ -187,7 +187,7 @@ ${bookmarkInfo}
       console.error("タイトルと説明の生成に失敗しました:", error);
       // エラー時のデフォルト値
       return {
-        title: `#${episodeNumber}: ${bookmarks[0]?.title || "新着ブックマーク"}`,
+        title: `${bookmarks[0]?.title || "新着ブックマーク"}`,
         description: `このエピソードでは、${bookmarks.length}件のブックマークを紹介します。`,
       };
     }
