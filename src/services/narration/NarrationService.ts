@@ -72,7 +72,9 @@ export class OpenAINarrationService implements NarrationService {
     try {
       // OpenAI APIを使用してナレーションを生成
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        // model: "gpt-4o-mini",
+        // model: "o3-mini", // 3/28以降使えるようになるはず
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
